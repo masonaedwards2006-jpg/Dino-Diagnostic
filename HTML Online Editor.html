@@ -1,0 +1,4254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dino Diagnostic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Design Tokens ─────────────────────────────────────────────────── */
+    :root {
+      /* Colors */
+      --c-bg:            #F5F2EB;
+      --c-surface:       #FFFFFF;
+      --c-surface-alt:   #FDFCF8;
+      --c-primary:       #1E3B2C;
+      --c-primary-mid:   #2D5941;
+      --c-primary-soft:  #E8F0EB;
+      --c-accent:        #C96F2E;
+      --c-accent-soft:   #F5E0CC;
+      --c-text:          #1A1917;
+      --c-text-2:        #514E49;
+      --c-text-3:        #928D85;
+      --c-border:        #DDD8CE;
+      --c-border-mid:    #C5BFB4;
+      --c-success:       #256642;
+      --c-success-soft:  #DDF0E6;
+      --c-error:         #A8312A;
+      --c-error-soft:    #FAEAEA;
+      --c-warn:          #7A5C18;
+      --c-warn-soft:     #FDF3D9;
+
+      /* Typography */
+      --f-display: 'Playfair Display', Georgia, serif;
+      --f-body:    'DM Sans', system-ui, sans-serif;
+
+      /* Spacing scale (4px base) */
+      --sp-1:  4px;
+      --sp-2:  8px;
+      --sp-3:  12px;
+      --sp-4:  16px;
+      --sp-5:  20px;
+      --sp-6:  24px;
+      --sp-8:  32px;
+      --sp-10: 40px;
+      --sp-12: 48px;
+      --sp-16: 64px;
+      --sp-20: 80px;
+
+      /* Radii */
+      --r-sm: 4px;
+      --r-md: 8px;
+      --r-lg: 12px;
+      --r-xl: 20px;
+      --r-full: 9999px;
+
+      /* Shadows */
+      --sh-sm: 0 1px 3px rgba(26,25,23,.07), 0 1px 2px rgba(26,25,23,.04);
+      --sh-md: 0 4px 16px rgba(26,25,23,.08), 0 2px 6px rgba(26,25,23,.05);
+      --sh-lg: 0 12px 40px rgba(26,25,23,.10), 0 4px 12px rgba(26,25,23,.06);
+
+      /* Transitions */
+      --t-fast: 120ms ease;
+      --t-base: 200ms ease;
+    }
+
+    /* ─── Reset & Base ──────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+    body {
+      font-family: var(--f-body);
+      background: var(--c-bg);
+      color: var(--c-text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* ─── Typography ────────────────────────────────────────────────────── */
+    .t-display {
+      font-family: var(--f-display);
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }
+
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.125rem; font-weight: 600; }
+
+    .label {
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--c-text-3);
+    }
+
+    /* ─── Layout ────────────────────────────────────────────────────────── */
+    .page-wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: var(--sp-6) var(--sp-5) var(--sp-20);
+    }
+
+    /* ─── Header / Brand ────────────────────────────────────────────────── */
+    .site-header {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+      padding: var(--sp-8) 0 var(--sp-6);
+    }
+
+    .logo-mark {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .logo-name {
+      font-family: var(--f-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--c-primary);
+      letter-spacing: -0.01em;
+      line-height: 1;
+    }
+
+    .logo-tagline {
+      font-size: .7rem;
+      font-weight: 500;
+      color: var(--c-text-3);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    /* ─── Progress Stepper ──────────────────────────────────────────────── */
+    .stepper {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+      margin: var(--sp-8) 0 var(--sp-10);
+    }
+
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      position: relative;
+    }
+
+    .step-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 15px;
+      left: calc(50% + 15px);
+      right: calc(-50% + 15px);
+      height: 1px;
+      background: var(--c-border);
+      transition: background var(--t-base);
+    }
+
+    .step-item.complete:not(:last-child)::after {
+      background: var(--c-primary);
+    }
+
+    .step-dot {
+      width: 30px;
+      height: 30px;
+      border-radius: var(--r-full);
+      border: 1.5px solid var(--c-border);
+      background: var(--c-surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .75rem;
+      font-weight: 600;
+      color: var(--c-text-3);
+      transition: all var(--t-base);
+      position: relative;
+      z-index: 1;
+    }
+
+    .step-item.active .step-dot {
+      border-color: var(--c-primary);
+      background: var(--c-primary);
+      color: #fff;
+    }
+
+    .step-item.complete .step-dot {
+      border-color: var(--c-primary);
+      background: var(--c-primary);
+      color: #fff;
+    }
+
+    .step-item.complete .step-dot::after {
+      content: '';
+      display: block;
+      width: 10px;
+      height: 6px;
+      border-left: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      transform: rotate(-45deg) translate(1px, -1px);
+    }
+
+    .step-item.complete .step-dot .step-num { display: none; }
+
+    .step-label {
+      margin-top: var(--sp-2);
+      font-size: .7rem;
+      font-weight: 500;
+      color: var(--c-text-3);
+      text-align: center;
+      letter-spacing: .03em;
+    }
+
+    .step-item.active .step-label { color: var(--c-primary); font-weight: 600; }
+    .step-item.complete .step-label { color: var(--c-text-2); }
+
+    /* ─── Card ──────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: var(--r-xl);
+      box-shadow: var(--sh-md);
+      overflow: hidden;
+    }
+
+    .card-body {
+      padding: var(--sp-8);
+    }
+
+    .card-body + .card-body {
+      border-top: 1px solid var(--c-border);
+    }
+
+    .card-sm {
+      background: var(--c-surface-alt);
+      border: 1px solid var(--c-border);
+      border-radius: var(--r-lg);
+      padding: var(--sp-5) var(--sp-6);
+    }
+
+    /* ─── Buttons ───────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--sp-2);
+      font-family: var(--f-body);
+      font-size: .9rem;
+      font-weight: 500;
+      padding: var(--sp-3) var(--sp-6);
+      border-radius: var(--r-md);
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      transition: all var(--t-fast);
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--c-primary);
+      outline-offset: 2px;
+    }
+
+    .btn-primary {
+      background: var(--c-primary);
+      color: #fff;
+      border-color: var(--c-primary);
+    }
+    .btn-primary:hover { background: var(--c-primary-mid); border-color: var(--c-primary-mid); }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--c-text-2);
+      border-color: var(--c-border-mid);
+    }
+    .btn-secondary:hover { background: var(--c-bg); color: var(--c-text); border-color: var(--c-border-mid); }
+
+    .btn-accent {
+      background: var(--c-accent);
+      color: #fff;
+      border-color: var(--c-accent);
+    }
+    .btn-accent:hover { filter: brightness(1.08); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--c-text-3);
+      border-color: transparent;
+    }
+    .btn-ghost:hover { color: var(--c-text); background: var(--c-bg); }
+
+    .btn-lg {
+      font-size: 1rem;
+      padding: var(--sp-4) var(--sp-8);
+      border-radius: var(--r-lg);
+    }
+
+    .btn-sm {
+      font-size: .8rem;
+      padding: var(--sp-2) var(--sp-4);
+      border-radius: var(--r-sm);
+    }
+
+    .btn:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    /* ─── Form Elements ─────────────────────────────────────────────────── */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-2);
+    }
+
+    .form-label {
+      font-size: .85rem;
+      font-weight: 500;
+      color: var(--c-text-2);
+    }
+
+    .form-hint {
+      font-size: .78rem;
+      color: var(--c-text-3);
+    }
+
+    .form-input,
+    .form-textarea,
+    .form-select {
+      font-family: var(--f-body);
+      font-size: .9rem;
+      color: var(--c-text);
+      background: var(--c-surface);
+      border: 1.5px solid var(--c-border);
+      border-radius: var(--r-md);
+      padding: var(--sp-3) var(--sp-4);
+      width: 100%;
+      transition: border-color var(--t-fast), box-shadow var(--t-fast);
+      outline: none;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus,
+    .form-select:focus {
+      border-color: var(--c-primary);
+      box-shadow: 0 0 0 3px rgba(30,59,44,.1);
+    }
+
+    .form-input::placeholder { color: var(--c-text-3); }
+
+    .form-input.monospace {
+      font-family: 'SFMono-Regular', 'Consolas', monospace;
+      font-size: .85rem;
+      letter-spacing: .02em;
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    /* Checkbox & Radio */
+    .check-group, .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-3);
+    }
+
+    .check-item, .radio-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--sp-3);
+      cursor: pointer;
+      padding: var(--sp-3) var(--sp-4);
+      border-radius: var(--r-md);
+      border: 1.5px solid var(--c-border);
+      transition: all var(--t-fast);
+    }
+
+    .check-item:hover, .radio-item:hover {
+      border-color: var(--c-primary);
+      background: var(--c-primary-soft);
+    }
+
+    .check-item.selected, .radio-item.selected {
+      border-color: var(--c-primary);
+      background: var(--c-primary-soft);
+    }
+
+    .check-item input[type=checkbox],
+    .radio-item input[type=radio] {
+      margin-top: 2px;
+      accent-color: var(--c-primary);
+      flex-shrink: 0;
+    }
+
+    .check-item-body {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .check-item-label {
+      font-size: .9rem;
+      font-weight: 500;
+    }
+
+    .check-item-desc {
+      font-size: .78rem;
+      color: var(--c-text-3);
+    }
+
+    /* ─── Step Shell ────────────────────────────────────────────────────── */
+    .step-screen { display: none; }
+    .step-screen.active { display: block; }
+
+    .step-header {
+      margin-bottom: var(--sp-8);
+    }
+
+    .step-eyebrow {
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--c-accent);
+      margin-bottom: var(--sp-2);
+    }
+
+    .step-title {
+      font-family: var(--f-display);
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--c-primary);
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin-bottom: var(--sp-3);
+    }
+
+    .step-subtitle {
+      font-size: 1rem;
+      color: var(--c-text-2);
+      line-height: 1.6;
+      max-width: 560px;
+    }
+
+    /* ─── Navigation Footer ─────────────────────────────────────────────── */
+    .step-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: var(--sp-8);
+      padding-top: var(--sp-6);
+      border-top: 1px solid var(--c-border);
+    }
+
+    .step-nav-right {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+    }
+
+    /* ─── Utility ───────────────────────────────────────────────────────── */
+    .stack { display: flex; flex-direction: column; }
+    .stack-2 { gap: var(--sp-2); }
+    .stack-3 { gap: var(--sp-3); }
+    .stack-4 { gap: var(--sp-4); }
+    .stack-5 { gap: var(--sp-5); }
+    .stack-6 { gap: var(--sp-6); }
+    .stack-8 { gap: var(--sp-8); }
+
+    .row { display: flex; align-items: center; }
+    .row-between { justify-content: space-between; }
+    .row-end { justify-content: flex-end; }
+    .gap-2 { gap: var(--sp-2); }
+    .gap-3 { gap: var(--sp-3); }
+    .gap-4 { gap: var(--sp-4); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
+
+    .text-sm { font-size: .85rem; }
+    .text-xs { font-size: .75rem; }
+    .text-muted { color: var(--c-text-3); }
+    .text-secondary { color: var(--c-text-2); }
+    .text-primary { color: var(--c-primary); }
+    .text-accent { color: var(--c-accent); }
+    .text-success { color: var(--c-success); }
+    .text-error { color: var(--c-error); }
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+
+    .divider {
+      height: 1px;
+      background: var(--c-border);
+      margin: var(--sp-6) 0;
+    }
+
+    /* ─── Badge ─────────────────────────────────────────────────────────── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--sp-1);
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .03em;
+      padding: 3px 10px;
+      border-radius: var(--r-full);
+    }
+
+    .badge-primary { background: var(--c-primary-soft); color: var(--c-primary); }
+    .badge-accent  { background: var(--c-accent-soft); color: var(--c-accent); }
+    .badge-success { background: var(--c-success-soft); color: var(--c-success); }
+    .badge-warn    { background: var(--c-warn-soft); color: var(--c-warn); }
+    .badge-muted   { background: var(--c-bg); color: var(--c-text-3); border: 1px solid var(--c-border); }
+
+    /* ─── Info Banner ───────────────────────────────────────────────────── */
+    .banner {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--sp-4);
+      padding: var(--sp-5) var(--sp-6);
+      border-radius: var(--r-lg);
+      border: 1px solid;
+    }
+
+    .banner-icon { font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
+
+    .banner-info    { background: #EEF4FF; border-color: #C5D8FA; color: #1D40AE; }
+    .banner-success { background: var(--c-success-soft); border-color: #A8DCBE; color: var(--c-success); }
+    .banner-warn    { background: var(--c-warn-soft); border-color: #E9D07A; color: var(--c-warn); }
+    .banner-error   { background: var(--c-error-soft); border-color: #E8A5A0; color: var(--c-error); }
+
+    .banner-body { font-size: .88rem; line-height: 1.5; }
+
+    /* ─── Spinner ───────────────────────────────────────────────────────── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block;
+      width: 13px;
+      height: 13px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .55s linear infinite;
+      vertical-align: -2px;
+    }
+    .banner-body strong { font-weight: 600; }
+
+    /* ─── Progress Bar ──────────────────────────────────────────────────── */
+    .progress-bar-wrap {
+      height: 6px;
+      background: var(--c-border);
+      border-radius: var(--r-full);
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--c-primary);
+      border-radius: var(--r-full);
+      transition: width .4s ease;
+    }
+
+    /* ─── File List ─────────────────────────────────────────────────────── */
+    .file-list { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+    .file-row {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-4);
+      padding: var(--sp-3) var(--sp-5);
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: var(--r-md);
+    }
+
+    .file-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--r-sm);
+      background: var(--c-primary-soft);
+      color: var(--c-primary);
+      font-size: .7rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      letter-spacing: .03em;
+    }
+
+    .file-info { flex: 1; min-width: 0; }
+    .file-name { font-size: .88rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-meta { font-size: .75rem; color: var(--c-text-3); }
+
+    /* ─── Cost Table ────────────────────────────────────────────────────── */
+    .cost-table { width: 100%; border-collapse: collapse; }
+
+    .cost-table td {
+      padding: var(--sp-3) 0;
+      font-size: .9rem;
+      border-bottom: 1px solid var(--c-border);
+    }
+
+    .cost-table td:last-child { text-align: right; font-weight: 500; }
+
+    .cost-table tr:last-child td { border-bottom: none; font-weight: 600; font-size: 1rem; }
+
+    /* ─── Answer Options ────────────────────────────────────────────────── */
+    .answer-options { display: flex; flex-direction: column; gap: var(--sp-3); }
+
+    .answer-option {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-4);
+      padding: var(--sp-4) var(--sp-5);
+      border: 1.5px solid var(--c-border);
+      border-radius: var(--r-lg);
+      cursor: pointer;
+      transition: all var(--t-fast);
+    }
+
+    .answer-option:hover { border-color: var(--c-primary); background: var(--c-primary-soft); }
+
+    .answer-option.selected {
+      border-color: var(--c-primary);
+      background: var(--c-primary-soft);
+    }
+
+    .answer-option.correct {
+      border-color: var(--c-success);
+      background: var(--c-success-soft);
+    }
+
+    .answer-option.incorrect {
+      border-color: var(--c-error);
+      background: var(--c-error-soft);
+    }
+
+    .answer-key {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--r-sm);
+      background: var(--c-bg);
+      border: 1.5px solid var(--c-border-mid);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .78rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      color: var(--c-text-2);
+    }
+
+    .answer-option.selected .answer-key {
+      background: var(--c-primary);
+      border-color: var(--c-primary);
+      color: #fff;
+    }
+
+    /* ─── Report Score Ring ─────────────────────────────────────────────── */
+    .score-ring-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--sp-2);
+    }
+
+    .score-ring {
+      position: relative;
+      width: 120px;
+      height: 120px;
+    }
+
+    .score-ring svg { transform: rotate(-90deg); }
+
+    .score-ring-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+    }
+
+    .score-pct {
+      font-family: var(--f-display);
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--c-primary);
+      line-height: 1;
+    }
+
+    .score-label-sm { font-size: .68rem; font-weight: 500; color: var(--c-text-3); }
+
+    /* ─── Topic Row ─────────────────────────────────────────────────────── */
+    .topic-rows { display: flex; flex-direction: column; gap: var(--sp-3); }
+
+    .topic-row {
+      display: grid;
+      grid-template-columns: 1fr 80px 140px;
+      align-items: center;
+      gap: var(--sp-4);
+    }
+
+    .topic-name { font-size: .9rem; font-weight: 500; }
+    .topic-score { font-size: .88rem; color: var(--c-text-2); text-align: center; }
+
+    .topic-bar-wrap {
+      height: 6px;
+      background: var(--c-border);
+      border-radius: var(--r-full);
+      overflow: hidden;
+    }
+
+    .topic-bar-fill {
+      height: 100%;
+      border-radius: var(--r-full);
+    }
+
+    /* ─── Upload Drop Zone ──────────────────────────────────────────────── */
+    .upload-zone {
+      border: 2px dashed var(--c-border-mid);
+      border-radius: var(--r-xl);
+      padding: var(--sp-12) var(--sp-8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--sp-4);
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--t-base);
+      background: var(--c-surface);
+    }
+
+    .upload-zone:hover,
+    .upload-zone.drag-over {
+      border-color: var(--c-primary);
+      background: var(--c-primary-soft);
+    }
+
+    .upload-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--r-xl);
+      background: var(--c-primary-soft);
+      color: var(--c-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .upload-types {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--sp-2);
+      justify-content: center;
+    }
+
+    /* ─── Indexing Loader ───────────────────────────────────────────────── */
+    .index-topic-list { display: flex; flex-direction: column; gap: var(--sp-3); }
+
+    .index-topic {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-1);
+      padding: var(--sp-4) var(--sp-5);
+      background: var(--c-surface-alt);
+      border: 1px solid var(--c-border);
+      border-radius: var(--r-md);
+    }
+
+    .index-topic-header { display: flex; align-items: center; justify-content: space-between; }
+    .index-topic-title { font-size: .9rem; font-weight: 600; color: var(--c-text); }
+    .index-subtopics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--sp-2);
+      margin-top: var(--sp-2);
+    }
+
+    /* ─── Field Validation ──────────────────────────────────────────────── */
+    .field-error {
+      font-size: .78rem;
+      color: var(--c-error);
+      display: none;
+    }
+
+    .form-input.invalid,
+    .form-textarea.invalid {
+      border-color: var(--c-error);
+      box-shadow: 0 0 0 3px rgba(168,49,42,.1);
+    }
+
+    /* ─── Module 6: Test Engine ─────────────────────────────────────────── */
+    .s6-type-label {
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--c-text-3);
+      margin-bottom: var(--sp-3);
+    }
+
+    .s6-question-text {
+      font-size: 1.05rem;
+      font-weight: 500;
+      line-height: 1.6;
+    }
+
+    .s6-tf-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--sp-3);
+    }
+
+    .s6-tf-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--sp-5);
+      border: 1.5px solid var(--c-border);
+      border-radius: var(--r-lg);
+      font-size: 1rem;
+      font-weight: 500;
+      font-family: var(--f-body);
+      cursor: pointer;
+      background: var(--c-surface);
+      color: var(--c-text);
+      transition: all var(--t-fast);
+    }
+    .s6-tf-btn:hover    { border-color: var(--c-primary); background: var(--c-primary-soft); }
+    .s6-tf-btn.selected { border-color: var(--c-primary); background: var(--c-primary-soft); }
+    .s6-tf-btn.correct  { border-color: var(--c-success); background: var(--c-success-soft); color: var(--c-success); }
+    .s6-tf-btn.incorrect{ border-color: var(--c-error);   background: var(--c-error-soft);   color: var(--c-error); }
+
+    .s6-result-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--sp-2);
+      padding: var(--sp-4) var(--sp-5);
+      border-radius: var(--r-md);
+      font-size: .9rem;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+    .s6-result-correct  { background: var(--c-success-soft); color: var(--c-success); border: 1px solid #A8DCBE; }
+    .s6-result-incorrect{ background: var(--c-error-soft);   color: var(--c-error);   border: 1px solid #E8A5A0; }
+    .s6-result-model    { background: var(--c-primary-soft); color: var(--c-text);    border: 1px solid var(--c-border); }
+
+    .s6-explanation {
+      padding: var(--sp-4) var(--sp-5);
+      background: var(--c-surface-alt);
+      border: 1px solid var(--c-border);
+      border-radius: var(--r-lg);
+    }
+
+    .s6-loading-card {
+      padding: var(--sp-12) var(--sp-8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--sp-5);
+      text-align: center;
+    }
+
+    .s6-spinner-lg {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--c-border);
+      border-top-color: var(--c-primary);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    /* ─── Fade In Animation ─────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-screen.active { animation: fadeUp 220ms ease forwards; }
+
+    /* ─── Responsive ────────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .step-title { font-size: 1.6rem; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .topic-row { grid-template-columns: 1fr 60px; }
+      .topic-bar-wrap { display: none; }
+      .stepper .step-label { display: none; }
+    }
+
+    /* ─── Module 4: Indexing Loader ─────────────────────────────────────── */
+    .s4-loader-steps { display: flex; flex-direction: column; gap: var(--sp-4); }
+
+    .s4-loader-step {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--sp-4);
+      opacity: .3;
+      transition: opacity var(--t-base);
+    }
+    .s4-loader-step.active { opacity: 1; }
+    .s4-loader-step.done   { opacity: .65; }
+
+    .s4-step-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--c-border-mid);
+      background: var(--c-surface);
+      flex-shrink: 0;
+      margin-top: 2px;
+      transition: all var(--t-base);
+      position: relative;
+    }
+
+    .s4-loader-step.active .s4-step-dot {
+      border-color: var(--c-accent);
+      background: var(--c-accent-soft);
+      animation: s4-pulse 1.5s ease-in-out infinite;
+    }
+
+    .s4-loader-step.done .s4-step-dot {
+      border-color: var(--c-success);
+      background: var(--c-success);
+      animation: none;
+    }
+
+    .s4-loader-step.done .s4-step-dot::after {
+      content: '';
+      display: block;
+      width: 8px;
+      height: 5px;
+      border-left: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      transform: rotate(-45deg) translate(1px, -1px);
+      position: absolute;
+      top: 5px;
+      left: 3px;
+    }
+
+    @keyframes s4-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(201,111,46,.45); }
+      50%       { box-shadow: 0 0 0 6px rgba(201,111,46,0); }
+    }
+
+    .s4-step-text { display: flex; flex-direction: column; gap: 2px; }
+    .s4-step-label { font-size: .9rem; font-weight: 500; color: var(--c-text); }
+    .s4-step-desc  { font-size: .78rem; color: var(--c-text-3); }
+
+    /* ─── Module 7: Report & PDF ────────────────────────────────────────── */
+    .s7-report-header {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--sp-6);
+      margin-bottom: var(--sp-5);
+    }
+
+    .s7-header-info { flex: 1; min-width: 0; }
+    .s7-header-info .step-title { margin-bottom: var(--sp-2); }
+
+    .s7-summary {
+      font-size: .95rem;
+      color: var(--c-text-2);
+      line-height: 1.65;
+      margin-top: var(--sp-2);
+    }
+
+    .s7-section-card { margin-top: var(--sp-5); }
+
+    .s7-section-title {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: var(--sp-5);
+      color: var(--c-text);
+    }
+
+    .s7-section-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--r-sm);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .72rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .s7-icon-strength { background: var(--c-success-soft); color: var(--c-success); }
+    .s7-icon-gap      { background: var(--c-error-soft);   color: var(--c-error); }
+
+    .s7-strength-chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+
+    .s7-gaps-list { display: flex; flex-direction: column; gap: var(--sp-3); }
+
+    .s7-gap-item {
+      padding: var(--sp-4) var(--sp-5);
+      background: var(--c-surface-alt);
+      border: 1px solid var(--c-border);
+      border-radius: var(--r-lg);
+    }
+
+    .s7-gap-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--sp-4);
+      margin-bottom: var(--sp-2);
+    }
+
+    .s7-gap-topic { font-weight: 600; font-size: .92rem; color: var(--c-text); }
+
+    .s7-gap-meta { display: flex; align-items: center; gap: var(--sp-2); flex-shrink: 0; }
+
+    .s7-gap-instruction {
+      font-size: .88rem;
+      color: var(--c-text-2);
+      line-height: 1.6;
+    }
+
+    .s7-action-row { margin-top: var(--sp-6); }
+
+    .badge-error { background: var(--c-error-soft); color: var(--c-error); }
+
+    @media (max-width: 600px) {
+      .s7-report-header { flex-direction: column; align-items: center; text-align: center; }
+    }
+
+    /* Confidence trajectory pill */
+    .s7-trajectory {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 11px; border-radius: var(--r-full);
+      font-size: .75rem; font-weight: 600; letter-spacing: .02em;
+    }
+    .s7-traj-improving  { background: var(--c-success-soft); color: var(--c-success); }
+    .s7-traj-declining  { background: var(--c-error-soft);   color: var(--c-error); }
+    .s7-traj-consistent { background: var(--c-warn-soft);    color: var(--c-warn); }
+
+    /* Prioritized study plan */
+    .s7-plan-list { display: flex; flex-direction: column; gap: var(--sp-5); }
+    .s7-plan-item { display: grid; grid-template-columns: 36px 1fr; gap: var(--sp-4); align-items: flex-start; }
+    .s7-plan-num {
+      width: 36px; height: 36px; border-radius: var(--r-full);
+      background: var(--c-accent); color: #fff;
+      font-size: .88rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;
+    }
+    .s7-plan-body { display: flex; flex-direction: column; gap: var(--sp-2); }
+    .s7-plan-topic  { font-weight: 600; font-size: .95rem; }
+    .s7-plan-reason { font-size: .8rem; color: var(--c-text-3); line-height: 1.4; }
+    .s7-plan-action { font-size: .9rem; color: var(--c-text-2); line-height: 1.55; }
+    .s7-plan-time   { font-size: .75rem; font-weight: 600; color: var(--c-accent); display: flex; align-items: center; gap: 4px; }
+
+    /* Gap item extras */
+    .s7-focus-chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
+    .s7-focus-chip  {
+      font-size: .72rem; font-weight: 500; padding: 3px 9px;
+      border-radius: var(--r-full); background: var(--c-bg);
+      color: var(--c-text-3); border: 1px solid var(--c-border);
+    }
+    .s7-time-tag   { font-size: .78rem; font-weight: 600; color: var(--c-accent); margin-top: var(--sp-1); }
+    .s7-source-tag { font-size: .75rem; color: var(--c-text-3); font-style: italic; margin-top: var(--sp-1); }
+
+    /* Enhanced strengths */
+    .s7-strength-list { display: flex; flex-direction: column; gap: var(--sp-3); }
+    .s7-strength-item { display: flex; flex-direction: column; gap: 4px; }
+    .s7-strength-insight { font-size: .82rem; color: var(--c-text-3); line-height: 1.5; }
+
+    /* Night-before checklist */
+    .s7-checklist { display: flex; flex-direction: column; gap: var(--sp-3); }
+    .s7-check-item {
+      display: flex; align-items: flex-start; gap: var(--sp-3);
+      padding: var(--sp-3) var(--sp-4); border: 1.5px solid var(--c-border);
+      border-radius: var(--r-md); cursor: pointer; transition: all var(--t-fast);
+      font-size: .9rem; color: var(--c-text-2); line-height: 1.5; user-select: none;
+    }
+    .s7-check-item:hover { border-color: var(--c-primary); background: var(--c-primary-soft); }
+    .s7-check-item.checked { text-decoration: line-through; color: var(--c-text-3); background: var(--c-surface-alt); border-color: var(--c-border); }
+    .s7-check-box {
+      width: 18px; height: 18px; border-radius: 4px;
+      border: 2px solid var(--c-border-mid); flex-shrink: 0;
+      margin-top: 2px; transition: all var(--t-fast);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .s7-check-item.checked .s7-check-box { background: var(--c-success); border-color: var(--c-success); }
+    .s7-check-item.checked .s7-check-box::after {
+      content: ''; display: block; width: 8px; height: 5px;
+      border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+      transform: rotate(-45deg) translate(1px, -1px);
+    }
+
+    /* Next session callout */
+    .s7-next-session {
+      background: var(--c-primary-soft); border: 1.5px solid #B5CEBC;
+      border-radius: var(--r-lg); padding: var(--sp-5) var(--sp-6);
+      display: flex; gap: var(--sp-4); align-items: flex-start;
+      margin-top: var(--sp-5);
+    }
+    .s7-next-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+    .s7-next-body { display: flex; flex-direction: column; gap: 4px; }
+    .s7-next-label { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--c-primary-mid); }
+    .s7-next-text  { font-size: .9rem; color: var(--c-text-2); line-height: 1.6; }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- Brand Header -->
+  <header class="site-header">
+    <svg class="logo-mark" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <!-- Dino skull / fossil logomark -->
+      <rect width="40" height="40" rx="10" fill="#1E3B2C"/>
+      <!-- Simplified dino head silhouette -->
+      <path d="M8 26 C8 22 11 18 15 17 L16 14 C16 13 17 12.5 18 13 L20 14.5 C21.5 13.5 23 13 25 13.5 C28 14 30 16 30 19 C30 20.5 29.5 22 28.5 23 L28 24 L27 28 C27 28.5 26.5 29 26 29 L24 29 L23 27 L20 29 L17 29 L16 27 L14 27 C12 27 10 26.5 9.5 26.5 Z" fill="#F5F2EB" opacity=".92"/>
+      <!-- Eye socket -->
+      <circle cx="22" cy="18" r="2" fill="#1E3B2C"/>
+      <!-- Nostril -->
+      <circle cx="27.5" cy="17.5" r="1" fill="#1E3B2C" opacity=".7"/>
+      <!-- Teeth -->
+      <path d="M16 27 L17 29.5 L18.5 27 M20 29 L21 31.5 L22.5 29 M24 29 L25 31.5 L26.5 29" stroke="#1E3B2C" stroke-width="1" stroke-linecap="round"/>
+    </svg>
+    <div class="logo-text">
+      <span class="logo-name">Dino Diagnostic</span>
+      <span class="logo-tagline">Adaptive Study Tool</span>
+    </div>
+  </header>
+
+  <!-- Progress Stepper -->
+  <nav class="stepper" id="stepper" aria-label="Progress">
+    <div class="step-item active" data-step="1">
+      <div class="step-dot"><span class="step-num">1</span></div>
+      <span class="step-label">Connect</span>
+    </div>
+    <div class="step-item" data-step="2">
+      <div class="step-dot"><span class="step-num">2</span></div>
+      <span class="step-label">Upload</span>
+    </div>
+    <div class="step-item" data-step="3">
+      <div class="step-dot"><span class="step-num">3</span></div>
+      <span class="step-label">Review</span>
+    </div>
+    <div class="step-item" data-step="4">
+      <div class="step-dot"><span class="step-num">4</span></div>
+      <span class="step-label">Profile</span>
+    </div>
+    <div class="step-item" data-step="5">
+      <div class="step-dot"><span class="step-num">5</span></div>
+      <span class="step-label">Test</span>
+    </div>
+    <div class="step-item" data-step="6">
+      <div class="step-dot"><span class="step-num">6</span></div>
+      <span class="step-label">Report</span>
+    </div>
+  </nav>
+
+  <!-- ─── Step 1: Connect ──────────────────────────────────────────────── -->
+  <div class="step-screen active" id="screen-1">
+    <div class="step-header">
+      <div class="step-eyebrow">Step 1 of 6</div>
+      <h1 class="step-title t-display">Connect your API key</h1>
+      <p class="step-subtitle">Dino Diagnostic runs entirely in your browser. Your Anthropic API key is stored locally and used only to generate your diagnostic — it never touches our servers.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-body stack stack-5">
+
+        <div class="banner banner-info">
+          <span class="banner-icon">ℹ</span>
+          <div class="banner-body">
+            <strong>Don't have a key?</strong> Get one at <a href="https://console.anthropic.com" target="_blank" style="color:inherit;font-weight:600;">console.anthropic.com</a>. New accounts include free credits.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="api-key-input">Anthropic API Key</label>
+          <div style="position:relative">
+            <input
+              id="api-key-input"
+              class="form-input monospace"
+              type="password"
+              placeholder="sk-ant-api03-…"
+              autocomplete="off"
+              spellcheck="false"
+              style="padding-right:58px"
+            />
+            <button
+              id="btn-toggle-key"
+              type="button"
+              onclick="toggleKeyVisibility()"
+              style="position:absolute;right:var(--sp-3);top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:.75rem;font-weight:500;color:var(--c-text-3);padding:var(--sp-1) var(--sp-2);font-family:var(--f-body)"
+            >Show</button>
+          </div>
+          <span class="form-hint">Your key is saved to <code>localStorage</code> on this device only.</span>
+        </div>
+
+        <div id="api-key-status" style="display:none"></div>
+
+        <div class="row gap-3" style="justify-content: flex-end">
+          <button id="btn-forget" class="btn btn-ghost btn-sm text-muted" type="button" style="display:none">Forget saved key</button>
+          <button id="btn-verify" class="btn btn-primary" type="button">Verify &amp; Connect →</button>
+        </div>
+
+      </div>
+
+      <div class="card-body stack stack-4">
+        <p class="label">How your key is used</p>
+        <div class="stack stack-3 text-sm text-secondary">
+          <div class="row gap-3">
+            <span style="color:var(--c-success)">✓</span>
+            <span>One small verification call when you connect (~100 tokens)</span>
+          </div>
+          <div class="row gap-3">
+            <span style="color:var(--c-success)">✓</span>
+            <span>One indexing call when your materials are processed</span>
+          </div>
+          <div class="row gap-3">
+            <span style="color:var(--c-success)">✓</span>
+            <span>Question batches during the test (5 at a time)</span>
+          </div>
+          <div class="row gap-3">
+            <span style="color:var(--c-success)">✓</span>
+            <span>Two calls to generate your final report and gap test</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-nav">
+      <div></div>
+      <div class="step-nav-right">
+        <button id="btn-continue-1" class="btn btn-primary" onclick="goTo(2)" disabled>Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Step 2: Upload ───────────────────────────────────────────────── -->
+  <div class="step-screen" id="screen-2">
+    <div class="step-header">
+      <div class="step-eyebrow">Step 2 of 6</div>
+      <h1 class="step-title t-display">Upload your materials</h1>
+      <p class="step-subtitle">Add the notes, slides, and readings you want to be tested on. Dino will extract the text and build a topic index — no content is stored outside your browser.</p>
+    </div>
+
+    <div class="stack stack-5">
+
+      <div class="upload-zone" id="upload-zone" role="button" tabindex="0" aria-label="Upload study materials">
+        <input type="file" id="file-input" multiple accept=".pdf,.txt,.md,.docx,.pptx,.jpg,.jpeg,.png" style="display:none" />
+        <div class="upload-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div>
+          <p class="font-medium" style="margin-bottom:4px">Drop files here or click to browse</p>
+          <p class="text-sm text-muted">PDF, TXT, MD, DOCX, PPTX, JPG, PNG</p>
+        </div>
+        <div class="upload-types">
+          <span class="badge badge-muted">PDF</span>
+          <span class="badge badge-muted">TXT</span>
+          <span class="badge badge-muted">MD</span>
+          <span class="badge badge-muted">DOCX</span>
+          <span class="badge badge-muted">PPTX</span>
+          <span class="badge badge-warn">Images ⚠</span>
+        </div>
+      </div>
+
+      <div id="file-list-section" style="display:none">
+        <div class="row row-between" style="margin-bottom:var(--sp-3)">
+          <p class="label">Uploaded files</p>
+          <span class="text-xs text-muted" id="file-summary"></span>
+        </div>
+        <div class="file-list" id="file-list"></div>
+      </div>
+
+    </div>
+
+    <div class="step-nav">
+      <button class="btn btn-secondary" onclick="goTo(1)">← Back</button>
+      <div class="step-nav-right">
+        <button id="btn-continue-2" class="btn btn-primary" onclick="goTo(3)" disabled>Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Step 3: Review & Cost ────────────────────────────────────────── -->
+  <div class="step-screen" id="screen-3">
+    <div class="step-header">
+      <div class="step-eyebrow">Step 3 of 6</div>
+      <h1 class="step-title t-display">Review &amp; cost estimate</h1>
+      <p class="step-subtitle">Before indexing your materials, here's a breakdown of the tokens extracted and the estimated API cost for a full session.</p>
+    </div>
+
+    <div class="stack stack-5">
+
+      <!-- High-token warning (shown dynamically) -->
+      <div id="s3-token-warn" class="banner banner-warn" style="display:none">
+        <span class="banner-icon">⚠</span>
+        <div class="banner-body">
+          <strong>Large material set.</strong> Your selected files exceed 60,000 tokens. Consider unchecking less important files or switching them to <strong>Summary Only</strong> — this reduces indexing cost and can improve result focus.
+        </div>
+      </div>
+
+      <!-- Token summary -->
+      <div class="card">
+        <div class="card-body">
+          <div class="row row-between" style="margin-bottom:var(--sp-3)">
+            <div>
+              <p class="font-semibold">Extracted material</p>
+              <p class="text-xs text-muted" style="margin-top:3px" id="s3-file-tally">— files uploaded · — tokens extracted</p>
+            </div>
+            <span class="badge badge-primary" id="s3-token-badge">— to index</span>
+          </div>
+          <div class="progress-bar-wrap" style="margin-bottom:var(--sp-3);margin-top:var(--sp-4)">
+            <div class="progress-bar-fill" id="s3-progress-fill" style="width:0%"></div>
+          </div>
+          <p class="text-xs text-muted" id="s3-progress-label">—% of the 60,000-token recommended limit</p>
+        </div>
+      </div>
+
+      <!-- Cost breakdown -->
+      <div class="card">
+        <div class="card-body">
+          <p class="label" style="margin-bottom:var(--sp-4)">Estimated session cost</p>
+          <table class="cost-table">
+            <tbody>
+              <tr>
+                <td class="text-secondary">Indexing (one-time)</td>
+                <td id="s3-cost-index">—</td>
+              </tr>
+              <tr>
+                <td class="text-secondary">20-question diagnostic</td>
+                <td id="s3-cost-diag">—</td>
+              </tr>
+              <tr>
+                <td class="text-secondary">Report &amp; gap test</td>
+                <td id="s3-cost-report">—</td>
+              </tr>
+              <tr>
+                <td>Total</td>
+                <td class="text-accent" id="s3-cost-total">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label" for="s3-credits-input">API credit balance (optional)</label>
+            <input id="s3-credits-input" class="form-input" type="number" placeholder="e.g. 5.00" step="0.01" min="0" style="max-width:200px" />
+            <span class="form-hint" id="s3-sessions-hint">Enter your balance to see how many sessions you can run.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- File selection -->
+      <div class="card">
+        <div class="card-body stack stack-4">
+          <div class="row row-between">
+            <p class="font-semibold">File indexing priority</p>
+            <span class="text-xs text-muted" id="s3-file-count"></span>
+          </div>
+          <p class="text-sm text-secondary">Uncheck a file to exclude it from indexing. Mark as <strong>Priority</strong> to index fully, or <strong>Summary Only</strong> to index at reduced detail and lower cost.</p>
+          <div class="file-list" id="s3-file-list"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="step-nav">
+      <button class="btn btn-secondary" onclick="goTo(2)">← Back</button>
+      <div class="step-nav-right">
+        <span class="text-sm text-muted" id="s3-index-hint"></span>
+        <button class="btn btn-accent" id="s3-confirm-btn" onclick="s3ConfirmAndContinue()">Confirm &amp; Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Step 4: Index ───────────────────────────────────────────────── -->
+  <div class="step-screen" id="screen-4">
+    <div class="step-header">
+      <div class="step-eyebrow">Step 4 of 6</div>
+      <h1 class="step-title t-display" id="s4-title">Building your index</h1>
+      <p class="step-subtitle" id="s4-subtitle">Sending your materials to Claude to extract subjects, topics, and subtopics. This usually takes 15–30 seconds.</p>
+    </div>
+
+    <!-- Loading state -->
+    <div id="s4-loading">
+      <div class="card">
+        <div class="card-body stack stack-6">
+
+          <div class="s4-loader-steps">
+            <div class="s4-loader-step active" id="ls-reading">
+              <div class="s4-step-dot"></div>
+              <div class="s4-step-text">
+                <span class="s4-step-label">Reading your materials</span>
+                <span class="s4-step-desc">Applying priority and summary-only settings</span>
+              </div>
+            </div>
+            <div class="s4-loader-step" id="ls-sending">
+              <div class="s4-step-dot"></div>
+              <div class="s4-step-text">
+                <span class="s4-step-label">Sending to Claude</span>
+                <span class="s4-step-desc">Making the indexing API call</span>
+              </div>
+            </div>
+            <div class="s4-loader-step" id="ls-analyzing">
+              <div class="s4-step-dot"></div>
+              <div class="s4-step-text">
+                <span class="s4-step-label">Analyzing content</span>
+                <span class="s4-step-desc">Extracting subjects, topics, and subtopics</span>
+              </div>
+            </div>
+            <div class="s4-loader-step" id="ls-building">
+              <div class="s4-step-dot"></div>
+              <div class="s4-step-text">
+                <span class="s4-step-label">Structuring index</span>
+                <span class="s4-step-desc">Saving to local storage</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="s4-progress-fill" style="width:8%;transition:width .6s ease"></div>
+          </div>
+          <p class="text-sm text-muted" style="text-align:center" id="s4-status-msg">Preparing your materials…</p>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Outline state -->
+    <div id="s4-outline" style="display:none">
+      <div class="stack stack-5">
+        <div class="banner banner-success">
+          <span class="banner-icon">✓</span>
+          <div class="banner-body">
+            <strong>Indexing complete.</strong> <span id="s4-index-summary"></span> Raw file text has been cleared to free up storage.
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body stack stack-5" id="s4-outline-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error state -->
+    <div id="s4-error" style="display:none">
+      <div class="banner banner-error">
+        <span class="banner-icon">⚠</span>
+        <div class="banner-body">
+          <strong>Indexing failed.</strong> <span id="s4-error-msg">An unexpected error occurred.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nav: loading (no buttons — call is in flight) -->
+    <div class="step-nav" id="s4-nav-loading">
+      <div></div>
+      <div class="step-nav-right">
+        <span class="text-sm text-muted" id="s4-nav-msg">Analyzing your materials…</span>
+      </div>
+    </div>
+
+    <!-- Nav: result -->
+    <div class="step-nav" id="s4-nav-result" style="display:none">
+      <button class="btn btn-secondary" onclick="s4ReuploadMaterials()">← Re-upload Materials</button>
+      <div class="step-nav-right">
+        <button class="btn btn-accent" onclick="goTo(5)">Looks Good — Continue →</button>
+      </div>
+    </div>
+
+    <!-- Nav: error -->
+    <div class="step-nav" id="s4-nav-error" style="display:none">
+      <button class="btn btn-secondary" onclick="s4ReuploadMaterials()">← Re-upload Materials</button>
+      <div class="step-nav-right">
+        <button class="btn btn-primary" onclick="s4RetryIndexing()">Retry →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Step 5: Exam Profile ─────────────────────────────────────────── -->
+  <div class="step-screen" id="screen-5">
+    <div class="step-header">
+      <div class="step-eyebrow">Step 5 of 6</div>
+      <h1 class="step-title t-display">Set up your exam</h1>
+      <p class="step-subtitle">Tell Dino about your upcoming exam so the diagnostic is calibrated to what you actually need to know.</p>
+    </div>
+
+    <div class="stack stack-5">
+
+      <div class="card">
+        <div class="card-body stack stack-6">
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="exam-name">Exam name <span class="text-accent">*</span></label>
+              <input id="exam-name" class="form-input" type="text" placeholder="e.g. Bio 201 Midterm" />
+              <span class="field-error s5-err" id="err-exam-name"></span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="exam-questions">Number of questions <span class="text-accent">*</span></label>
+              <input id="exam-questions" class="form-input" type="number" placeholder="30" min="1" max="100" />
+              <span class="field-error s5-err" id="err-exam-questions"></span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Question types <span class="text-accent">*</span></label>
+            <div class="check-group">
+              <label class="check-item selected">
+                <input type="checkbox" name="question-types" value="multiple_choice" checked />
+                <div class="check-item-body">
+                  <span class="check-item-label">Multiple Choice</span>
+                  <span class="check-item-desc">Four options, one correct answer</span>
+                </div>
+              </label>
+              <label class="check-item">
+                <input type="checkbox" name="question-types" value="short_answer" />
+                <div class="check-item-body">
+                  <span class="check-item-label">Short Answer</span>
+                  <span class="check-item-desc">Open-ended, 1–3 sentence response</span>
+                </div>
+              </label>
+              <label class="check-item selected">
+                <input type="checkbox" name="question-types" value="true_false" checked />
+                <div class="check-item-body">
+                  <span class="check-item-label">True / False</span>
+                  <span class="check-item-desc">Simple binary judgment questions</span>
+                </div>
+              </label>
+              <label class="check-item">
+                <input type="checkbox" name="question-types" value="fill_in_blank" />
+                <div class="check-item-body">
+                  <span class="check-item-label">Fill in the Blank</span>
+                  <span class="check-item-desc">Single-word or phrase completion</span>
+                </div>
+              </label>
+              <label class="check-item">
+                <input type="checkbox" name="question-types" value="essay" />
+                <div class="check-item-body">
+                  <span class="check-item-label">Essay</span>
+                  <span class="check-item-desc">Extended written response demonstrating understanding</span>
+                </div>
+              </label>
+            </div>
+            <span class="field-error s5-err" id="err-question-types" style="margin-top:var(--sp-2)"></span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="emphasized-topics">Emphasized topics <span class="text-accent">*</span></label>
+            <textarea id="emphasized-topics" class="form-textarea" placeholder="e.g. My professor said chapters 3 and 5 are heavily tested" rows="3"></textarea>
+            <span class="form-hint">Dino will weight question generation toward these areas.</span>
+            <span class="field-error s5-err" id="err-emphasized-topics"></span>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="time-limit">Time limit <span class="text-muted" style="font-weight:400">(optional)</span></label>
+              <input id="time-limit" class="form-input" type="number" placeholder="Minutes (e.g. 60)" min="1" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Adaptive mode <span class="text-accent">*</span></label>
+            <div class="radio-group">
+              <label class="radio-item selected">
+                <input type="radio" name="adaptive" value="drill_deeper" checked />
+                <div class="check-item-body">
+                  <span class="check-item-label">Drill Deeper</span>
+                  <span class="check-item-desc">Generates follow-up questions to map exact knowledge gaps when you struggle on a topic</span>
+                </div>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="adaptive" value="stop_and_move_on" />
+                <div class="check-item-body">
+                  <span class="check-item-label">Stop &amp; Move On</span>
+                  <span class="check-item-desc">Marks weak areas and moves on when a topic drops below 50%, keeping sessions faster</span>
+                </div>
+              </label>
+            </div>
+            <span class="field-error s5-err" id="err-adaptive-mode" style="margin-top:var(--sp-2)"></span>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <div class="step-nav">
+      <button class="btn btn-secondary" onclick="goTo(4)">← Back</button>
+      <div class="step-nav-right">
+        <button class="btn btn-accent" onclick="s5Submit()">Start Diagnostic →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Step 6: Diagnostic Test ─────────────────────────────────────── -->
+  <div class="step-screen" id="screen-6">
+
+    <!-- Loading / generating state -->
+    <div id="s6-loading">
+      <div class="step-header">
+        <div class="step-eyebrow">Step 6 of 6</div>
+        <h1 class="step-title t-display">Preparing your diagnostic</h1>
+        <p class="step-subtitle">Generating your first batch of questions from your materials…</p>
+      </div>
+      <div class="card">
+        <div class="s6-loading-card">
+          <div class="s6-spinner-lg"></div>
+          <p class="text-secondary" id="s6-load-msg">Contacting Claude…</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error state -->
+    <div id="s6-error" style="display:none">
+      <div class="step-header">
+        <div class="step-eyebrow">Step 6 of 6</div>
+        <h1 class="step-title t-display">Something went wrong</h1>
+      </div>
+      <div class="banner banner-error" style="margin-bottom:var(--sp-8)">
+        <span class="banner-icon">⚠</span>
+        <div class="banner-body" id="s6-error-msg">An unexpected error occurred.</div>
+      </div>
+      <div class="step-nav">
+        <button class="btn btn-secondary" onclick="goTo(5)">← Back to Profile</button>
+        <div class="step-nav-right">
+          <button class="btn btn-primary" onclick="s6Retry()">Retry →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active question view -->
+    <div id="s6-question" style="display:none">
+      <div class="step-header">
+        <div class="step-eyebrow">Step 6 of 6</div>
+        <h1 class="step-title t-display" id="s6-exam-title">Diagnostic</h1>
+      </div>
+      <div class="stack stack-5">
+        <div class="row row-between text-sm text-muted">
+          <span>Question <strong id="s6-q-num" style="color:var(--c-text)">1</strong> of <strong id="s6-q-total" style="color:var(--c-text)">30</strong></span>
+          <span class="badge badge-muted" id="s6-q-meta">—</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="s6-progress-fill" style="width:0%"></div>
+        </div>
+        <div class="card">
+          <div class="card-body stack stack-6" id="s6-q-card">
+            <!-- populated by JS -->
+          </div>
+        </div>
+      </div>
+      <div class="step-nav">
+        <span class="text-sm text-muted">Auto-saves after every question</span>
+      </div>
+    </div>
+
+    <!-- Completion bridge (Module 7 takes over at screen-7) -->
+    <div id="s6-complete" style="display:none">
+      <div class="step-header">
+        <div class="step-eyebrow">Step 6 of 6</div>
+        <h1 class="step-title t-display">Test complete!</h1>
+        <p class="step-subtitle">Saving your results and preparing your report…</p>
+      </div>
+      <div class="card">
+        <div class="s6-loading-card">
+          <div class="s6-spinner-lg"></div>
+          <p class="text-secondary">Analysing your performance…</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── Step 7: Report ──────────────────────────────────────────────── -->
+  <div class="step-screen" id="screen-7">
+    <div class="step-header">
+      <div class="step-eyebrow">Report</div>
+      <h1 class="step-title t-display">Your study report</h1>
+      <p class="step-subtitle">Analyzing your results and building your personalized study plan.</p>
+    </div>
+
+    <!-- Loading sub-view -->
+    <div id="s7-loading">
+      <div class="card">
+        <div class="s6-loading-card">
+          <div class="s6-spinner-lg"></div>
+          <p class="font-semibold text-primary" id="s7-load-msg">Analyzing your performance…</p>
+          <p class="text-sm text-muted">This usually takes about 10 seconds.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error sub-view -->
+    <div id="s7-error" style="display:none">
+      <div class="banner banner-error">
+        <span class="banner-icon">✕</span>
+        <div class="banner-body">
+          <strong>Report generation failed.</strong>
+          <span id="s7-error-msg"></span>
+        </div>
+      </div>
+      <div class="step-nav" style="margin-top:var(--sp-6)">
+        <button class="btn btn-secondary" onclick="goTo(1)">Start new session</button>
+        <button class="btn btn-primary" onclick="s7Retry()">Try again →</button>
+      </div>
+    </div>
+
+    <!-- Report sub-view (built dynamically by Module 7 JS) -->
+    <div id="s7-report" style="display:none"></div>
+  </div>
+
+  <!-- ─── end screens ──────────────────────────────────────────────────── -->
+
+</div><!-- end page-wrap -->
+
+<script src="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+  /* ─── Navigation ──────────────────────────────────────────────────────── */
+  const TOTAL_STEPS = 6;
+
+  function goTo(step) {
+    // Hide all screens
+    document.querySelectorAll('.step-screen').forEach(el => el.classList.remove('active'));
+    // Show target
+    document.getElementById('screen-' + step).classList.add('active');
+    // Update stepper
+    document.querySelectorAll('.step-item').forEach((el, i) => {
+      const n = i + 1;
+      el.classList.remove('active', 'complete');
+      if (n < step) el.classList.add('complete');
+      if (n === step) el.classList.add('active');
+    });
+    // Scroll to top of page
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Call per-screen init hook if registered
+    if (window._screenHooks && window._screenHooks[step]) window._screenHooks[step]();
+  }
+
+  /* ─── Interactive checkbox / radio highlight ───────────────────────────── */
+  document.addEventListener('change', function(e) {
+    const target = e.target;
+    if (target.type === 'checkbox') {
+      target.closest('.check-item').classList.toggle('selected', target.checked);
+    }
+    if (target.type === 'radio') {
+      // Deselect all siblings
+      document.querySelectorAll(`input[name="${target.name}"]`).forEach(r => {
+        r.closest('.radio-item').classList.remove('selected');
+      });
+      target.closest('.radio-item').classList.add('selected');
+    }
+  });
+
+  /* ─── Answer option click ─────────────────────────────────────────────── */
+  document.querySelectorAll('.answer-option').forEach(opt => {
+    opt.addEventListener('click', function() {
+      this.closest('.answer-options').querySelectorAll('.answer-option').forEach(o => {
+        o.classList.remove('selected');
+      });
+      this.classList.add('selected');
+    });
+  });
+
+  /* ─── Module 2: API Key Entry & Verification ──────────────────────────── */
+  (function() {
+    const input    = document.getElementById('api-key-input');
+    const btnVerify  = document.getElementById('btn-verify');
+    const btnForget  = document.getElementById('btn-forget');
+    const btnCont    = document.getElementById('btn-continue-1');
+    const statusEl   = document.getElementById('api-key-status');
+
+    function getSavedKey() { return localStorage.getItem('dino_api_key') || ''; }
+
+    // Init: restore saved key
+    if (getSavedKey()) {
+      input.value = getSavedKey();
+      btnForget.style.display = '';
+      btnCont.disabled = false;
+      showStatus('success', 'API key loaded from this device — ready to continue.');
+    }
+
+    btnVerify.addEventListener('click', verifyKey);
+    btnForget.addEventListener('click', forgetKey);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') verifyKey(); });
+    input.addEventListener('input', () => {
+      clearStatus();
+      if (input.value !== getSavedKey()) btnCont.disabled = true;
+      btnForget.style.display = getSavedKey() ? '' : 'none';
+    });
+
+    async function verifyKey() {
+      const key = input.value.trim();
+      if (!key) { showStatus('error', 'Please enter your API key.'); input.focus(); return; }
+
+      setLoading(true);
+      clearStatus();
+
+      try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': key,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-5',
+            max_tokens: 5,
+            messages: [{ role: 'user', content: 'Hi' }]
+          })
+        });
+        const data = await res.json();
+        if (data.error) {
+          let msg = data.error.message || 'Verification failed.';
+          if (data.error.type === 'authentication_error') {
+            msg = 'Invalid API key. Check that you copied it correctly from console.anthropic.com.';
+          }
+          throw new Error(msg);
+        }
+
+        localStorage.setItem('dino_api_key', key);
+        showStatus('success', 'Connected! Key verified successfully.');
+        btnForget.style.display = '';
+        btnCont.disabled = false;
+        setTimeout(() => goTo(2), 900);
+      } catch (err) {
+        const isNetwork = err.message.toLowerCase().includes('fetch') || err.message.toLowerCase().includes('failed to fetch');
+        showStatus('error', isNetwork
+          ? 'Could not reach the Anthropic API. Check your internet connection and try again.'
+          : err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function forgetKey() {
+      localStorage.removeItem('dino_api_key');
+      input.value = '';
+      input.type = 'password';
+      document.getElementById('btn-toggle-key').textContent = 'Show';
+      input.focus();
+      btnForget.style.display = 'none';
+      btnCont.disabled = true;
+      clearStatus();
+    }
+
+    function setLoading(on) {
+      btnVerify.disabled = on;
+      input.disabled = on;
+      btnVerify.innerHTML = on ? '<span class="spinner"></span> Verifying…' : 'Verify &amp; Connect →';
+    }
+
+    function showStatus(type, msg) {
+      const escaped = msg.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      statusEl.style.display = '';
+      statusEl.className = 'banner banner-' + type;
+      statusEl.innerHTML = `<span class="banner-icon">${type === 'success' ? '&#x2713;' : '&#x26A0;'}</span><div class="banner-body">${escaped}</div>`;
+    }
+
+    function clearStatus() {
+      statusEl.style.display = 'none';
+      statusEl.innerHTML = '';
+    }
+  })();
+
+  /* ─── Show / Hide API key toggle ─────────────────────────────────────── */
+  function toggleKeyVisibility() {
+    const input = document.getElementById('api-key-input');
+    const btn   = document.getElementById('btn-toggle-key');
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    btn.textContent = isHidden ? 'Hide' : 'Show';
+  }
+
+  /* ─── Module 3: File Upload & Parsing ──────────────────────────────────── */
+  (function() {
+    if (typeof pdfjsLib !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+    }
+
+    const zone       = document.getElementById('upload-zone');
+    const fileInput  = document.getElementById('file-input');
+    const fileListEl = document.getElementById('file-list');
+    const sectionEl  = document.getElementById('file-list-section');
+    const summaryEl  = document.getElementById('file-summary');
+    const btnCont    = document.getElementById('btn-continue-2');
+
+    const EXTS = ['pdf','txt','md','docx','pptx','jpg','jpeg','png'];
+    let entries = {};
+    let counter = 0;
+
+    // Restore previously parsed files from localStorage
+    (function restore() {
+      const stored = JSON.parse(localStorage.getItem('dino_files') || '{}');
+      Object.entries(stored).forEach(([name, text]) => {
+        const ext = name.split('.').pop().toLowerCase();
+        const isImg = ['jpg','jpeg','png'].includes(ext);
+        const e = { id: 'f'+(counter++), name, size: null, status: isImg ? 'limited' : 'success', text };
+        entries[name] = e;
+        appendRow(e);
+        renderBadge(e);
+      });
+      syncUI();
+    })();
+
+    // Zone: click to browse
+    zone.addEventListener('click', e => {
+      if (e.target === fileInput || e.target.closest('.remove-btn')) return;
+      fileInput.click();
+    });
+    zone.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+    });
+    fileInput.addEventListener('change', e => {
+      processFiles(Array.from(e.target.files));
+      e.target.value = '';
+    });
+
+    // Zone: drag-and-drop
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', e => {
+      if (!zone.contains(e.relatedTarget)) zone.classList.remove('drag-over');
+    });
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      processFiles(Array.from(e.dataTransfer.files));
+    });
+
+    // Remove button via event delegation
+    fileListEl.addEventListener('click', e => {
+      const btn = e.target.closest('.remove-btn');
+      if (btn) removeFile(btn.dataset.filename);
+    });
+
+    // ── File processing ──────────────────────────────────────────────────
+    function processFiles(files) {
+      files.forEach(file => {
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!EXTS.includes(ext)) {
+          alert('"' + file.name + '" is not a supported file type.');
+          return;
+        }
+        if (entries[file.name]) return; // skip duplicate
+        const e = { id: 'f'+(counter++), name: file.name, size: file.size, status: 'processing', text: '' };
+        entries[file.name] = e;
+        appendRow(e);
+        syncUI();
+        parseFile(file, e);
+      });
+    }
+
+    async function parseFile(file, e) {
+      try {
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (ext === 'pdf') {
+          e.text = await parsePdf(file);   e.status = 'success';
+        } else if (ext === 'txt' || ext === 'md') {
+          e.text = await readText(file);   e.status = 'success';
+        } else if (ext === 'docx') {
+          e.text = await parseDocx(file);  e.status = 'success';
+        } else if (ext === 'pptx') {
+          e.text = await parsePptx(file);  e.status = 'success';
+        } else {
+          // jpg / jpeg / png
+          e.text = '[Image file: ' + file.name + ' — no automatic text extraction available for images. Include for reference only.]';
+          e.status = 'limited';
+        }
+      } catch (err) {
+        console.error('Parse error:', file.name, err);
+        e.status = 'failed';
+        e.text = '';
+      }
+      if (e.status !== 'failed') saveFile(e.name, e.text);
+      renderBadge(e);
+      syncUI();
+    }
+
+    // ── Parsers ──────────────────────────────────────────────────────────
+    async function parsePdf(file) {
+      if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js not loaded');
+      const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+      const pages = [];
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        pages.push(content.items.map(x => x.str).join(' '));
+      }
+      return pages.join('\n\n');
+    }
+
+    function readText(file) {
+      return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = e => res(e.target.result);
+        r.onerror = rej;
+        r.readAsText(file, 'UTF-8');
+      });
+    }
+
+    async function parseDocx(file) {
+      if (typeof JSZip === 'undefined') throw new Error('JSZip not loaded');
+      const zip = await JSZip.loadAsync(await file.arrayBuffer());
+      const docXml = zip.file('word/document.xml');
+      if (!docXml) throw new Error('Not a valid DOCX');
+      return stripXml(await docXml.async('text'));
+    }
+
+    async function parsePptx(file) {
+      if (typeof JSZip === 'undefined') throw new Error('JSZip not loaded');
+      const zip = await JSZip.loadAsync(await file.arrayBuffer());
+      const slideNames = Object.keys(zip.files)
+        .filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n))
+        .sort((a, b) => parseInt(a.match(/\d+/)[0]) - parseInt(b.match(/\d+/)[0]));
+      const parts = await Promise.all(slideNames.map(n => zip.file(n).async('text').then(stripXml)));
+      return parts.join('\n\n');
+    }
+
+    function stripXml(xml) {
+      return xml
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+        .replace(/&#x[\dA-Fa-f]+;/g, ' ').replace(/&#\d+;/g, ' ')
+        .replace(/\s+/g, ' ').trim();
+    }
+
+    // ── Storage ──────────────────────────────────────────────────────────
+    function saveFile(name, text) {
+      try {
+        const store = JSON.parse(localStorage.getItem('dino_files') || '{}');
+        store[name] = text;
+        localStorage.setItem('dino_files', JSON.stringify(store));
+      } catch (e) {
+        console.warn('localStorage quota exceeded — could not persist:', name);
+      }
+    }
+
+    function removeFile(name) {
+      fileListEl.querySelectorAll('.file-row').forEach(r => {
+        if (r.dataset.filename === name) r.remove();
+      });
+      delete entries[name];
+      try {
+        const store = JSON.parse(localStorage.getItem('dino_files') || '{}');
+        delete store[name];
+        localStorage.setItem('dino_files', JSON.stringify(store));
+      } catch (e) {}
+      syncUI();
+    }
+
+    // ── DOM helpers ──────────────────────────────────────────────────────
+    function appendRow(e) {
+      const ext = e.name.split('.').pop().toUpperCase();
+      const icon = ['JPG','JPEG','PNG'].includes(ext) ? 'IMG'
+                 : ext === 'DOCX' ? 'DOC'
+                 : ext === 'PPTX' ? 'PPT'
+                 : ext.slice(0, 3);
+      const row = document.createElement('div');
+      row.className = 'file-row';
+      row.dataset.filename = e.name;
+      row.innerHTML =
+        '<div class="file-icon">' + esc(icon) + '</div>' +
+        '<div class="file-info">' +
+          '<div class="file-name">' + esc(e.name) + '</div>' +
+          '<div class="file-meta" id="meta-' + e.id + '">' + (e.size ? fmt(e.size) : '') + '</div>' +
+        '</div>' +
+        '<span class="badge badge-muted" id="badge-' + e.id + '">' +
+          '<span class="spinner" style="border-color:rgba(0,0,0,.12);border-top-color:var(--c-text-3)"></span>&nbsp;Processing' +
+        '</span>' +
+        '<button class="btn btn-ghost btn-sm remove-btn" style="color:var(--c-text-3)" title="Remove" data-filename="' + esc(e.name) + '">&#x2715;</button>';
+      fileListEl.appendChild(row);
+    }
+
+    function renderBadge(e) {
+      const badge = document.getElementById('badge-' + e.id);
+      const meta  = document.getElementById('meta-' + e.id);
+      if (!badge) return;
+      const sz = e.size ? fmt(e.size) + ' · ' : '';
+      if (e.status === 'success') {
+        badge.className = 'badge badge-success';
+        badge.textContent = 'Parsed';
+        if (meta) meta.textContent = sz + '~' + Math.round(e.text.length / 4).toLocaleString() + ' tokens extracted';
+      } else if (e.status === 'limited') {
+        badge.className = 'badge badge-warn';
+        badge.textContent = 'Limited OCR';
+        if (meta) meta.textContent = sz + 'Text extraction limited for images';
+      } else if (e.status === 'failed') {
+        badge.className = 'badge';
+        badge.style.cssText = 'background:var(--c-error-soft);color:var(--c-error)';
+        badge.textContent = 'Failed';
+        if (meta) meta.textContent = sz + 'Could not parse file';
+      }
+    }
+
+    function syncUI() {
+      const arr = Object.values(entries);
+      sectionEl.style.display = arr.length ? '' : 'none';
+      const ok = arr.filter(e => e.status === 'success').length;
+      const tokens = arr
+        .filter(e => e.status === 'success')
+        .reduce((s, e) => s + Math.round(e.text.length / 4), 0);
+      summaryEl.textContent = arr.length + ' file' + (arr.length !== 1 ? 's' : '') +
+        (ok ? ' · ~' + tokens.toLocaleString() + ' tokens extracted' : '');
+      btnCont.disabled = ok === 0;
+    }
+
+    function fmt(b) {
+      if (!b) return '';
+      if (b < 1024) return b + ' B';
+      if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+      return (b / 1048576).toFixed(1) + ' MB';
+    }
+
+    function esc(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  })();
+
+  /* ─── Module 3b: Token Counter & Cost Estimator ──────────────────────── */
+  (function() {
+    const INPUT_RATE  = 3.00;   // $ per 1M input tokens
+    const OUTPUT_RATE = 15.00;  // $ per 1M output tokens
+    const WARN_LIMIT  = 60000;
+    const SUMMARY_RATIO = 0.20; // Summary Only = 20% of full token count
+
+    // Fixed token overheads for non-indexing calls
+    const IDX_OVERHEAD_IN     = 300;   // system prompt on indexing call
+    const IDX_OUTPUT          = 1500;  // compact JSON index response
+    const DIAG_BATCHES        = 4;     // 20 questions / 5 per batch
+    const DIAG_IN_PER_BATCH   = 500;   // profile + index context per batch
+    const DIAG_OUT_PER_BATCH  = 500;   // ~5 questions × ~100 tokens
+    const REPORT_CALLS        = 2;
+    const REPORT_IN_PER_CALL  = 600;
+    const REPORT_OUT_PER_CALL = 800;
+
+    let fileList = [];       // [{ name, rawTokens }]
+    let selection = {};      // { name: { included, priority } }
+    let perSessionCost = 0;  // cached for credits-input live update
+
+    function init() {
+      const stored = JSON.parse(localStorage.getItem('dino_files') || '{}');
+      const saved  = JSON.parse(localStorage.getItem('dino_file_selection') || '{}');
+
+      fileList = Object.entries(stored).map(([name, text]) => ({
+        name,
+        rawTokens: Math.round((text || '').length / 4)
+      }));
+
+      selection = {};
+      fileList.forEach(function(f) {
+        const s = saved[f.name];
+        selection[f.name] = {
+          included: s ? s.included !== false : true,
+          priority: s ? s.priority !== false : true
+        };
+      });
+
+      renderFileList();
+      recalculate();
+    }
+
+    function renderFileList() {
+      const list    = document.getElementById('s3-file-list');
+      const countEl = document.getElementById('s3-file-count');
+      list.innerHTML = '';
+
+      if (!fileList.length) {
+        list.innerHTML = '<p class="text-sm text-muted">No files uploaded yet. Go back and add files.</p>';
+        countEl.textContent = '';
+        return;
+      }
+
+      countEl.textContent = fileList.length + ' file' + (fileList.length !== 1 ? 's' : '');
+
+      fileList.forEach(function(f) {
+        var name = f.name;
+        var rawTokens = f.rawTokens;
+        var ext  = name.split('.').pop().toUpperCase();
+        var icon = ['JPG','JPEG','PNG'].includes(ext) ? 'IMG'
+                 : ext === 'DOCX' ? 'DOC'
+                 : ext === 'PPTX' ? 'PPT'
+                 : ext.slice(0, 3);
+        var sel = selection[name];
+
+        var row = document.createElement('div');
+        row.className = 'file-row';
+        row.style.transition = 'opacity var(--t-base)';
+        if (!sel.included) row.style.opacity = '0.45';
+
+        // Checkbox
+        var checkWrap = document.createElement('label');
+        checkWrap.style.cssText = 'display:flex;align-items:center;cursor:pointer;margin-right:var(--sp-2);flex-shrink:0';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = sel.included;
+        cb.style.cssText = 'accent-color:var(--c-primary);width:16px;height:16px';
+        (function(n, r, drop) {
+          cb.addEventListener('change', function() {
+            selection[n].included = this.checked;
+            r.style.opacity = this.checked ? '1' : '0.45';
+            drop.disabled = !this.checked;
+            recalculate();
+          });
+        })(name, row, /* selDrop defined below, patched after */ null);
+        checkWrap.appendChild(cb);
+
+        // File type icon
+        var iconEl = document.createElement('div');
+        iconEl.className = 'file-icon';
+        iconEl.textContent = icon;
+
+        // File info
+        var info = document.createElement('div');
+        info.className = 'file-info';
+        var nameEl = document.createElement('div');
+        nameEl.className = 'file-name';
+        nameEl.textContent = name;
+        var metaEl = document.createElement('div');
+        metaEl.className = 'file-meta';
+        metaEl.textContent = '~' + rawTokens.toLocaleString() + ' tokens';
+        info.appendChild(nameEl);
+        info.appendChild(metaEl);
+
+        // Priority select
+        var selDrop = document.createElement('select');
+        selDrop.className = 'form-select';
+        selDrop.style.cssText = 'width:auto;font-size:.8rem';
+        selDrop.disabled = !sel.included;
+        [['Priority','priority'],['Summary Only','summary']].forEach(function(pair) {
+          var opt = document.createElement('option');
+          opt.value = pair[1];
+          opt.textContent = pair[0];
+          if (pair[1] === 'priority' ? sel.priority : !sel.priority) opt.selected = true;
+          selDrop.appendChild(opt);
+        });
+        (function(n) {
+          selDrop.addEventListener('change', function() {
+            selection[n].priority = this.value === 'priority';
+            recalculate();
+          });
+        })(name);
+
+        // Patch the checkbox listener now that selDrop exists
+        cb.addEventListener('change', function() { selDrop.disabled = !this.checked; });
+
+        row.appendChild(checkWrap);
+        row.appendChild(iconEl);
+        row.appendChild(info);
+        row.appendChild(selDrop);
+        list.appendChild(row);
+      });
+    }
+
+    function recalculate() {
+      var totalRawTokens = fileList.reduce(function(s, f) { return s + f.rawTokens; }, 0);
+      var totalFiles = fileList.length;
+
+      var effectiveTokens = 0;
+      var includedCount   = 0;
+      fileList.forEach(function(f) {
+        var sel = selection[f.name];
+        if (!sel.included) return;
+        includedCount++;
+        effectiveTokens += sel.priority ? f.rawTokens : Math.round(f.rawTokens * SUMMARY_RATIO);
+      });
+
+      // Token summary card
+      document.getElementById('s3-file-tally').textContent =
+        totalFiles + ' file' + (totalFiles !== 1 ? 's' : '') + ' uploaded · ~' +
+        totalRawTokens.toLocaleString() + ' tokens extracted';
+      document.getElementById('s3-token-badge').textContent =
+        '~' + effectiveTokens.toLocaleString() + ' to index';
+
+      var pct = Math.min(100, Math.round((effectiveTokens / WARN_LIMIT) * 100));
+      var fill = document.getElementById('s3-progress-fill');
+      fill.style.width = pct + '%';
+      fill.style.background = effectiveTokens > WARN_LIMIT ? 'var(--c-error)' : 'var(--c-primary)';
+      document.getElementById('s3-progress-label').textContent =
+        pct + '% of the 60,000-token recommended limit';
+      document.getElementById('s3-token-warn').style.display =
+        effectiveTokens > WARN_LIMIT ? '' : 'none';
+
+      // Cost calculations
+      var idxCost  = ((effectiveTokens + IDX_OVERHEAD_IN) * INPUT_RATE + IDX_OUTPUT * OUTPUT_RATE) / 1e6;
+      var diagCost = (DIAG_BATCHES * DIAG_IN_PER_BATCH * INPUT_RATE + DIAG_BATCHES * DIAG_OUT_PER_BATCH * OUTPUT_RATE) / 1e6;
+      var rptCost  = (REPORT_CALLS * REPORT_IN_PER_CALL * INPUT_RATE + REPORT_CALLS * REPORT_OUT_PER_CALL * OUTPUT_RATE) / 1e6;
+      var total    = idxCost + diagCost + rptCost;
+      perSessionCost = diagCost + rptCost;
+
+      document.getElementById('s3-cost-index').textContent  = fmtDollar(idxCost);
+      document.getElementById('s3-cost-diag').textContent   = fmtDollar(diagCost);
+      document.getElementById('s3-cost-report').textContent = fmtDollar(rptCost);
+      document.getElementById('s3-cost-total').textContent  = '~' + fmtDollar(total);
+      document.getElementById('s3-index-hint').textContent  =
+        'Indexing will use ~' + fmtDollar(idxCost) + ' of credits';
+
+      document.getElementById('s3-confirm-btn').disabled = includedCount === 0;
+
+      updateSessionsHint();
+    }
+
+    function updateSessionsHint() {
+      var input = document.getElementById('s3-credits-input');
+      var hint  = document.getElementById('s3-sessions-hint');
+      var bal   = parseFloat(input.value);
+      if (isFinite(bal) && bal > 0 && perSessionCost > 0) {
+        var n = Math.floor(bal / perSessionCost);
+        hint.textContent = 'Estimated ' + n.toLocaleString() + ' diagnostic session' +
+          (n !== 1 ? 's' : '') + ' remaining at this material size.';
+        hint.style.color = n < 3 ? 'var(--c-warn)' : '';
+      } else {
+        hint.textContent = 'Enter your balance to see how many sessions you can run.';
+        hint.style.color = '';
+      }
+    }
+
+    function fmtDollar(n) {
+      if (n < 0.005) return '~$0.00';
+      if (n < 0.01)  return '<$0.01';
+      return '$' + n.toFixed(2);
+    }
+
+    document.getElementById('s3-credits-input').addEventListener('input', updateSessionsHint);
+
+    window.s3ConfirmAndContinue = function() {
+      localStorage.setItem('dino_file_selection', JSON.stringify(selection));
+      goTo(4);
+    };
+
+    window._screenHooks = window._screenHooks || {};
+    window._screenHooks[3] = init;
+  })();
+
+  /* ─── callClaude (shared across all AI-calling modules) ──────────────── */
+  window.callClaude = async function(systemPrompt, userMessage, maxTokens) {
+    maxTokens = maxTokens || 1000;
+    const apiKey = localStorage.getItem('dino_api_key');
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: maxTokens,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }]
+      })
+    });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.content[0].text;
+  };
+
+  /* ─── Module 4: Material Preprocessing & Indexing ────────────────────── */
+  (function() {
+    let running = false;
+
+    window._screenHooks = window._screenHooks || {};
+    window._screenHooks[4] = initScreen4;
+
+    function initScreen4() {
+      // If we're mid-call (navigated away and back), just show loading
+      if (running) { showState('loading'); return; }
+
+      // If index already built (e.g. returning from step 5), show outline
+      const stored = localStorage.getItem('dino_material_index');
+      if (stored) {
+        try { showOutline(JSON.parse(stored)); return; } catch(e) { /* fall through */ }
+      }
+
+      startIndexing();
+    }
+
+    async function startIndexing() {
+      running = true;
+      showState('loading');
+      resetSteps();
+
+      let progressTick = null;
+
+      try {
+        // ── Step 1: read & prepare content ──────────────────────────────
+        activateStep('ls-reading');
+        setProgress(10, 'Preparing your materials…');
+
+        const files     = JSON.parse(localStorage.getItem('dino_files') || '{}');
+        const selection = JSON.parse(localStorage.getItem('dino_file_selection') || '{}');
+
+        const parts = [];
+        Object.keys(files).forEach(function(name) {
+          const sel = selection[name] || { included: true, priority: true };
+          if (!sel.included) return;
+          let text = files[name] || '';
+          if (!sel.priority) text = text.slice(0, 2000);
+          parts.push('=== ' + name + ' ===\n' + text);
+        });
+
+        if (!parts.length) {
+          throw new Error('No files found. Please go back and upload your study materials.');
+        }
+
+        doneStep('ls-reading');
+        activateStep('ls-sending');
+        setProgress(28, 'Sending to Claude…');
+
+        const systemPrompt =
+          'Return only the raw JSON object. No text before it. No text after it. ' +
+          'No markdown. No backticks. Your entire response must start with { and end with }. ' +
+          'Schema: {"subjects":[{"name":"string","topics":[{"title":"string",' +
+          '"subtopics":["string"],"summary":"string","source":"string",' +
+          '"importance":"high|medium|low"}]}]}';
+
+        const userMessage = 'Index these study materials into the JSON schema:\n\n' + parts.join('\n\n');
+
+        doneStep('ls-sending');
+
+        // ── Step 2: API call with up to 3 attempts ───────────────────────
+        const MAX_ATTEMPTS = 3;
+        let index = null;
+        let lastError = null;
+
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+          if (progressTick) { clearInterval(progressTick); progressTick = null; }
+
+          if (attempt === 1) {
+            activateStep('ls-analyzing');
+            setProgress(45, 'Claude is analyzing your content…');
+          } else {
+            activateStep('ls-analyzing');
+            setProgress(45, 'Retrying… (attempt ' + attempt + ' of ' + MAX_ATTEMPTS + ')');
+          }
+
+          progressTick = setInterval(function() {
+            const fill = document.getElementById('s4-progress-fill');
+            if (!fill) return;
+            const cur = parseFloat(fill.style.width) || 45;
+            if (cur < 78) fill.style.width = (cur + 0.8) + '%';
+          }, 1000);
+
+          try {
+            const raw = await window.callClaude(systemPrompt, userMessage, 4000);
+
+            clearInterval(progressTick);
+            progressTick = null;
+
+            // ── Step 3: parse JSON ───────────────────────────────────────
+            // Regex extraction: grab the outermost {...} block regardless of surrounding text
+            let text = raw.trim();
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) text = jsonMatch[0];
+
+            const parsed = JSON.parse(text);
+
+            if (!parsed || !Array.isArray(parsed.subjects)) {
+              throw new Error('Response did not match the expected index structure.');
+            }
+
+            index = parsed;
+            break; // success — exit retry loop
+
+          } catch(attemptErr) {
+            if (progressTick) { clearInterval(progressTick); progressTick = null; }
+            lastError = attemptErr;
+            // loop continues to next attempt
+          }
+        }
+
+        if (!index) {
+          const msg = (lastError && lastError.message) || 'An unexpected error occurred.';
+          throw new Error(msg + (MAX_ATTEMPTS > 1 ? ' Failed after ' + MAX_ATTEMPTS + ' attempts.' : ''));
+        }
+
+        doneStep('ls-analyzing');
+        activateStep('ls-building');
+        setProgress(88, 'Structuring your index…');
+
+        // ── Step 4: store index, clear raw text ──────────────────────────
+        localStorage.setItem('dino_material_index', JSON.stringify(index));
+        localStorage.removeItem('dino_files');
+
+        doneStep('ls-building');
+        setProgress(100, 'Index complete!');
+
+        // Brief pause so the completed progress bar is visible
+        await new Promise(function(r) { setTimeout(r, 500); });
+
+        running = false;
+        showOutline(index);
+
+      } catch(err) {
+        if (progressTick) clearInterval(progressTick);
+        running = false;
+        showError(err.message || 'An unexpected error occurred.');
+      }
+    }
+
+    // ── State management ────────────────────────────────────────────────
+    function showState(state) {
+      document.getElementById('s4-loading').style.display  = state === 'loading'  ? '' : 'none';
+      document.getElementById('s4-outline').style.display  = state === 'outline'  ? '' : 'none';
+      document.getElementById('s4-error').style.display    = state === 'error'    ? '' : 'none';
+      document.getElementById('s4-nav-loading').style.display = state === 'loading'  ? '' : 'none';
+      document.getElementById('s4-nav-result').style.display  = state === 'outline'  ? '' : 'none';
+      document.getElementById('s4-nav-error').style.display   = state === 'error'    ? '' : 'none';
+
+      if (state === 'outline') {
+        document.getElementById('s4-title').textContent    = 'Material index';
+        document.getElementById('s4-subtitle').textContent =
+          'Your materials have been analyzed and organized into a topic index. ' +
+          'Review it below to confirm the AI understood your content correctly.';
+      }
+    }
+
+    function resetSteps() {
+      ['ls-reading','ls-sending','ls-analyzing','ls-building'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) { el.classList.remove('active','done'); }
+      });
+    }
+
+    function activateStep(id) {
+      const el = document.getElementById(id);
+      if (el) { el.classList.remove('done'); el.classList.add('active'); }
+    }
+
+    function doneStep(id) {
+      const el = document.getElementById(id);
+      if (el) { el.classList.remove('active'); el.classList.add('done'); }
+    }
+
+    function setProgress(pct, msg) {
+      const fill = document.getElementById('s4-progress-fill');
+      if (fill) fill.style.width = pct + '%';
+      const status = document.getElementById('s4-status-msg');
+      if (status) status.textContent = msg;
+    }
+
+    // ── Outline renderer ────────────────────────────────────────────────
+    function showOutline(index) {
+      showState('outline');
+
+      const subjectCount = index.subjects.length;
+      const topicCount   = index.subjects.reduce(function(n, s) {
+        return n + (s.topics ? s.topics.length : 0);
+      }, 0);
+
+      document.getElementById('s4-index-summary').textContent =
+        'Found ' + subjectCount + ' subject' + (subjectCount !== 1 ? 's' : '') +
+        ' and ' + topicCount + ' topic' + (topicCount !== 1 ? 's' : '') +
+        ' across your materials.';
+
+      const container = document.getElementById('s4-outline-content');
+      container.innerHTML = '';
+
+      index.subjects.forEach(function(subject, si) {
+        if (si > 0) {
+          const divider = document.createElement('div');
+          divider.className = 'divider';
+          container.appendChild(divider);
+        }
+
+        const subjectWrap = document.createElement('div');
+
+        // Subject header
+        const header = document.createElement('div');
+        header.className = 'row row-between';
+        header.style.marginBottom = 'var(--sp-3)';
+
+        const nameEl = document.createElement('p');
+        nameEl.className = 'font-semibold';
+        nameEl.textContent = subject.name || 'Untitled Subject';
+
+        const topics = subject.topics || [];
+        const countBadge = document.createElement('span');
+        countBadge.className = 'badge badge-muted';
+        countBadge.textContent = topics.length + ' topic' + (topics.length !== 1 ? 's' : '');
+
+        header.appendChild(nameEl);
+        header.appendChild(countBadge);
+        subjectWrap.appendChild(header);
+
+        // Topic list
+        const topicList = document.createElement('div');
+        topicList.className = 'index-topic-list';
+
+        topics.forEach(function(topic) {
+          const topicEl = document.createElement('div');
+          topicEl.className = 'index-topic';
+
+          // Topic header row
+          const topicHeader = document.createElement('div');
+          topicHeader.className = 'index-topic-header';
+
+          const titleEl = document.createElement('span');
+          titleEl.className = 'index-topic-title';
+          titleEl.textContent = topic.title || '';
+
+          const imp = ((topic.importance || 'medium')).toLowerCase();
+          const badgeClass = imp === 'high' ? 'badge-accent'
+                           : imp === 'low'  ? 'badge-muted'
+                           :                  'badge-primary';
+          const impBadge = document.createElement('span');
+          impBadge.className = 'badge ' + badgeClass;
+          impBadge.textContent = imp.charAt(0).toUpperCase() + imp.slice(1) + ' importance';
+
+          topicHeader.appendChild(titleEl);
+          topicHeader.appendChild(impBadge);
+          topicEl.appendChild(topicHeader);
+
+          // Summary
+          if (topic.summary) {
+            const summaryEl = document.createElement('p');
+            summaryEl.className = 'text-sm text-secondary';
+            summaryEl.style.cssText = 'margin:var(--sp-1) 0 var(--sp-2)';
+            summaryEl.textContent = topic.summary;
+            topicEl.appendChild(summaryEl);
+          }
+
+          // Subtopic badges
+          if (topic.subtopics && topic.subtopics.length) {
+            const stWrap = document.createElement('div');
+            stWrap.className = 'index-subtopics';
+            topic.subtopics.forEach(function(st) {
+              const b = document.createElement('span');
+              b.className = 'badge badge-muted';
+              b.textContent = st;
+              stWrap.appendChild(b);
+            });
+            topicEl.appendChild(stWrap);
+          }
+
+          // Source file
+          if (topic.source) {
+            const sourceEl = document.createElement('p');
+            sourceEl.className = 'text-xs text-muted';
+            sourceEl.style.marginTop = 'var(--sp-2)';
+            sourceEl.textContent = 'Source: ' + topic.source;
+            topicEl.appendChild(sourceEl);
+          }
+
+          topicList.appendChild(topicEl);
+        });
+
+        subjectWrap.appendChild(topicList);
+        container.appendChild(subjectWrap);
+      });
+    }
+
+    // ── Error display ────────────────────────────────────────────────────
+    function showError(msg) {
+      showState('error');
+      document.getElementById('s4-error-msg').textContent = msg;
+    }
+
+    // ── Public callbacks ─────────────────────────────────────────────────
+    window.s4RetryIndexing = function() {
+      resetSteps();
+      setProgress(8, 'Preparing your materials…');
+      startIndexing();
+    };
+
+    window.s4ReuploadMaterials = function() {
+      localStorage.removeItem('dino_material_index');
+      running = false;
+      goTo(2);
+    };
+  })();
+
+  /* ─── Module 5: Exam Profile Form ────────────────────────────────────── */
+  (function() {
+
+    function init() {
+      const saved = JSON.parse(localStorage.getItem('dino_exam_profile') || 'null');
+      if (!saved) return;
+
+      if (saved.examName)
+        document.getElementById('exam-name').value = saved.examName;
+      if (saved.totalQuestions)
+        document.getElementById('exam-questions').value = saved.totalQuestions;
+      if (saved.emphasizedTopics)
+        document.getElementById('emphasized-topics').value = saved.emphasizedTopics;
+      if (saved.timeLimit)
+        document.getElementById('time-limit').value = saved.timeLimit;
+
+      if (Array.isArray(saved.questionTypes)) {
+        document.querySelectorAll('input[name="question-types"]').forEach(function(cb) {
+          const on = saved.questionTypes.includes(cb.value);
+          cb.checked = on;
+          cb.closest('.check-item').classList.toggle('selected', on);
+        });
+      }
+
+      if (saved.adaptiveMode) {
+        document.querySelectorAll('input[name="adaptive"]').forEach(function(r) {
+          const on = r.value === saved.adaptiveMode;
+          r.checked = on;
+          r.closest('.radio-item').classList.toggle('selected', on);
+        });
+      }
+    }
+
+    function clearErrors() {
+      document.querySelectorAll('#screen-5 .s5-err').forEach(function(el) {
+        el.textContent = '';
+        el.style.display = 'none';
+      });
+      ['exam-name', 'exam-questions', 'emphasized-topics'].forEach(function(id) {
+        document.getElementById(id).classList.remove('invalid');
+      });
+    }
+
+    function showErr(id, msg) {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = msg; el.style.display = ''; }
+    }
+
+    window.s5Submit = function() {
+      clearErrors();
+      let valid = true;
+
+      const examName = document.getElementById('exam-name').value.trim();
+      if (!examName) {
+        showErr('err-exam-name', 'Please enter the exam name.');
+        document.getElementById('exam-name').classList.add('invalid');
+        valid = false;
+      }
+
+      const totalQsRaw = document.getElementById('exam-questions').value;
+      const totalQs = parseInt(totalQsRaw, 10);
+      if (!totalQsRaw || isNaN(totalQs) || totalQs < 1 || totalQs > 100) {
+        showErr('err-exam-questions', 'Enter a number between 1 and 100.');
+        document.getElementById('exam-questions').classList.add('invalid');
+        valid = false;
+      }
+
+      const selectedTypes = Array.from(
+        document.querySelectorAll('input[name="question-types"]:checked')
+      ).map(function(cb) { return cb.value; });
+      if (!selectedTypes.length) {
+        showErr('err-question-types', 'Select at least one question type.');
+        valid = false;
+      }
+
+      const emphasizedTopics = document.getElementById('emphasized-topics').value.trim();
+      if (!emphasizedTopics) {
+        showErr('err-emphasized-topics', 'Describe the topics your professor emphasized.');
+        document.getElementById('emphasized-topics').classList.add('invalid');
+        valid = false;
+      }
+
+      const adaptiveEl = document.querySelector('input[name="adaptive"]:checked');
+      if (!adaptiveEl) {
+        showErr('err-adaptive-mode', 'Please select an adaptive mode.');
+        valid = false;
+      }
+
+      if (!valid) {
+        const firstErr = document.querySelector('#screen-5 .s5-err:not([style*="display: none"])');
+        if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      const timeLimitRaw = document.getElementById('time-limit').value;
+      const timeLimit = timeLimitRaw ? parseInt(timeLimitRaw, 10) : null;
+
+      const profile = {
+        examName:         examName,
+        totalQuestions:   totalQs,
+        questionTypes:    selectedTypes,
+        emphasizedTopics: emphasizedTopics,
+        timeLimit:        (timeLimit && !isNaN(timeLimit)) ? timeLimit : null,
+        adaptiveMode:     adaptiveEl.value
+      };
+
+      localStorage.setItem('dino_exam_profile', JSON.stringify(profile));
+      goTo(6);
+    };
+
+    window._screenHooks = window._screenHooks || {};
+    window._screenHooks[5] = init;
+  })();
+
+  /* ─── Module 6: Diagnostic Test Engine ──────────────────────────────── */
+  (function () {
+    var state           = null;
+    var emptyFetches    = 0;    // guard against infinite fetch loops
+    var pendingBatch    = null; // null | 'fetching' | Question[]  — pre-fetched next batch
+    var pendingCallback = null; // called when pendingBatch resolves
+    var BATCH           = 3;
+    var MAX_RETRY       = 2;
+    var MIN_DIFF = 1, MAX_DIFF = 5;
+
+    var TYPE_LABELS = {
+      multiple_choice: 'Multiple Choice',
+      short_answer:    'Short Answer',
+      true_false:      'True / False',
+      fill_in_blank:   'Fill in the Blank',
+      essay:           'Essay'
+    };
+    var OPEN_ENDED = ['short_answer', 'fill_in_blank', 'essay'];
+
+    /* ── Screen hook ────────────────────────────────────────────────────── */
+    window._screenHooks = window._screenHooks || {};
+    window._screenHooks[6] = function () {
+      emptyFetches    = 0;
+      pendingBatch    = null;
+      pendingCallback = null;
+      var profile = JSON.parse(localStorage.getItem('dino_exam_profile') || 'null');
+      var index   = JSON.parse(localStorage.getItem('dino_material_index') || 'null');
+
+      if (!profile || !index) {
+        showErr('Missing exam profile or material index. Please go back and complete the previous steps.');
+        return;
+      }
+
+      // Attempt resume
+      var saved = JSON.parse(localStorage.getItem('dino_test_state') || 'null');
+      if (saved && saved.profile && saved.profile.examName === profile.examName) {
+        state = saved;
+        state.index = index;
+        // Backfill budget fields for states saved before this version
+        if (!state.topicBudget) {
+          var numT0 = 0;
+          index.subjects.forEach(function (s) { numT0 += (s.topics || []).length; });
+          state.topicBudget      = Math.ceil(state.profile.totalQuestions / Math.max(1, numT0));
+          state.breadthThreshold = Math.ceil(state.profile.totalQuestions * 0.6);
+        }
+        setTitle(profile.examName);
+        if (state.answers.length >= state.profile.totalQuestions || allGapped()) {
+          finishTest(); return;
+        }
+        if (state.buffer && state.buffer.length) { showNextQ(); }
+        else { fetchBatch(); }
+      } else {
+        var numT = 0;
+        index.subjects.forEach(function (s) { numT += (s.topics || []).length; });
+        state = {
+          profile:          profile,
+          index:            index,
+          questions:        [],
+          answers:          [],
+          topicStats:       {},
+          difficulty:       2,
+          buffer:           [],
+          startTime:        Date.now(),
+          topicBudget:      Math.ceil(profile.totalQuestions / Math.max(1, numT)),
+          breadthThreshold: Math.ceil(profile.totalQuestions * 0.6)
+        };
+        setTitle(profile.examName);
+        persist();
+        fetchBatch();
+      }
+    };
+
+    function setTitle(name) {
+      var el = document.getElementById('s6-exam-title');
+      if (el) el.textContent = name;
+    }
+
+    /* ── View switching ─────────────────────────────────────────────────── */
+    function showView(id) {
+      ['s6-loading', 's6-error', 's6-question', 's6-complete'].forEach(function (v) {
+        var el = document.getElementById(v);
+        if (el) el.style.display = (v === id) ? '' : 'none';
+      });
+    }
+
+    function showErr(msg) {
+      showView('s6-error');
+      var el = document.getElementById('s6-error-msg');
+      if (el) el.textContent = msg;
+    }
+
+    window.s6Retry = function () {
+      emptyFetches    = 0;
+      pendingBatch    = null;
+      pendingCallback = null;
+      if (!state) { window._screenHooks[6](); return; }
+      fetchBatch();
+    };
+
+    /* ── Batch fetch ────────────────────────────────────────────────────── */
+    function buildPrompt(batchSize) {
+      var chunks = topicChunks();
+      var chunksText = chunks.join('\n');
+      if (chunksText.length > 2000) chunksText = chunksText.slice(0, 2000);
+      var askedTail = state.questions.slice(-10).map(function (q) { return q.question; }).join(' | ');
+      var sys =
+        'Return only a raw JSON array. No text before it. No text after it. No markdown. ' +
+        'No backticks. No trailing commas. No comments. Every string value must use double quotes. ' +
+        'Your entire response must start with [ and end with ]. ' +
+        'Each object must have exactly: id (string), type (multiple_choice|short_answer|true_false|fill_in_blank|essay), ' +
+        'topic (string), difficulty (integer 1–5), question (string), ' +
+        'options (4-string array for multiple_choice, null otherwise), ' +
+        'correct (exact answer string; for true_false use "True" or "False"), explanation (string).';
+      var usr = [
+        'EXAM: ' + state.profile.examName,
+        'ALLOWED TYPES: ' + state.profile.questionTypes.join(', '),
+        'EMPHASIZED: ' + (state.profile.emphasizedTopics || 'none'),
+        'CURRENT DIFFICULTY: ' + state.difficulty + ' (scale 1–5)',
+        'BATCH SIZE NEEDED: ' + batchSize,
+        '',
+        perfSummary(),
+        drillHint(),
+        '',
+        'TOPIC PRIORITY (least covered first — generate questions for earlier topics preferentially):',
+        chunksText,
+        '',
+        'DO NOT repeat these recently asked questions: ' + (askedTail || 'none')
+      ].filter(Boolean).join('\n');
+      return { sys: sys, usr: usr };
+    }
+
+    function fetchBatch() {
+      showView('s6-loading');
+      var loadMsg = document.getElementById('s6-load-msg');
+      if (loadMsg) loadMsg.textContent = 'Generating questions…';
+
+      var remaining = state.profile.totalQuestions - state.answers.length;
+      if (remaining <= 0) { finishTest(); return; }
+
+      var chunks = topicChunks();
+      if (!chunks.length) { finishTest(); return; }
+
+      var batchSize = Math.min(BATCH, remaining);
+      var prompt = buildPrompt(batchSize);
+
+      attempt(prompt.sys, prompt.usr, 0,
+        function (arr) {
+          var offset = state.questions.length;
+          arr.forEach(function (q, i) { q.id = 'q' + (offset + i + 1); });
+          state.buffer = arr;
+          emptyFetches = 0;
+          persist();
+          showNextQ();
+        },
+        function (err) {
+          showErr('Could not generate questions after ' + (MAX_RETRY + 1) + ' attempts: ' + (err.message || 'unknown error'));
+        }
+      );
+    }
+
+    function prefetchNext() {
+      if (pendingBatch !== null) return;
+      var afterBuffer = state.profile.totalQuestions - state.answers.length - 1 - state.buffer.length;
+      if (afterBuffer <= 0 || allGapped()) return;
+      if (!topicChunks().length) return;
+      pendingBatch = 'fetching';
+      var batchSize = Math.min(BATCH, afterBuffer);
+      var prompt = buildPrompt(batchSize);
+      attempt(prompt.sys, prompt.usr, 0,
+        function (arr) {
+          pendingBatch = arr;
+          if (pendingCallback) {
+            var cb = pendingCallback;
+            pendingCallback = null;
+            cb();
+          }
+        },
+        function () {
+          pendingBatch = null; // silently degrade — fetchBatch will handle retry
+        }
+      );
+    }
+
+    function attempt(sys, usr, tries, onOk, onFail) {
+      window.callClaude(sys, usr, 2000).then(function (raw) {
+        var text = raw.trim();
+        var m = text.match(/\[[\s\S]*\]/);
+        if (m) text = m[0];
+        text = text.replace(/,\s*([}\]])/g, '$1');
+        text = text.replace(/\/\/[^\n]*/g, '');
+        text = text.replace(/\/\*[\s\S]*?\*\//g, '');
+        var arr = JSON.parse(text);
+        if (!Array.isArray(arr) || !arr.length) throw new Error('Empty question array returned.');
+        onOk(arr);
+      }).catch(function (err) {
+        if (tries < MAX_RETRY) { attempt(sys, usr, tries + 1, onOk, onFail); }
+        else { onFail(err); }
+      });
+    }
+
+    /* ── Topic / performance helpers ────────────────────────────────────── */
+    function topicChunks() {
+      var items = [];
+      var prof = state.profile;
+      state.index.subjects.forEach(function (subj) {
+        (subj.topics || []).forEach(function (t) {
+          var st = state.topicStats[t.title];
+          if (st && st.gapped) return;
+          items.push({ t: t, st: st });
+        });
+      });
+      // Priority queue: least-covered topics first
+      items.sort(function (a, b) {
+        return (a.st ? a.st.attempted : 0) - (b.st ? b.st.attempted : 0);
+      });
+      return items.map(function (item) {
+        var t  = item.t;
+        var st = item.st;
+        var em   = prof.emphasizedTopics && prof.emphasizedTopics.toLowerCase().indexOf(t.title.toLowerCase()) >= 0;
+        var weak = st && st.attempted >= 2 && st.correct / st.attempted < 0.5;
+        return 'Topic: ' + t.title +
+          (em ? ' [EMPHASIZED]' : '') + (weak ? ' [WEAK]' : '') +
+          ' | Summary: ' + t.summary +
+          ' | Subtopics: ' + (t.subtopics || []).join(', ');
+      });
+    }
+
+    function countUncoveredTopics() {
+      var n = 0;
+      state.index.subjects.forEach(function (s) {
+        (s.topics || []).forEach(function (t) {
+          var st = state.topicStats[t.title];
+          if (!st || !st.attempted) n++;
+        });
+      });
+      return n;
+    }
+
+    function perfSummary() {
+      var keys = Object.keys(state.topicStats);
+      if (!keys.length) return 'No questions answered yet.';
+      return 'Performance so far:\n' + keys.map(function (t) {
+        var s = state.topicStats[t];
+        var pct = s.attempted ? Math.round(s.correct / s.attempted * 100) : 0;
+        return '  ' + t + ': ' + s.correct + '/' + s.attempted + ' (' + pct + '%)' + (s.gapped ? ' [GAP]' : '');
+      }).join('\n');
+    }
+
+    function drillHint() {
+      if (state.profile.adaptiveMode !== 'drill_deeper') return '';
+      // Only signal drill focus once the breadth threshold has been met
+      if (state.answers.length < (state.breadthThreshold || 0)) return '';
+      var weak = Object.keys(state.topicStats).filter(function (t) {
+        var s = state.topicStats[t];
+        return !s.gapped && s.attempted >= 3 && s.correct / s.attempted < 0.5;
+      });
+      if (!weak.length) return '';
+      return 'DRILL FOCUS — generate harder follow-up questions on these weak topics: ' + weak.join(', ');
+    }
+
+    function allGapped() {
+      var total = 0, gapped = 0;
+      state.index.subjects.forEach(function (s) {
+        (s.topics || []).forEach(function (t) {
+          total++;
+          var st = state.topicStats[t.title];
+          if (st && st.gapped) gapped++;
+        });
+      });
+      return total > 0 && gapped >= total;
+    }
+
+    /* ── Show next question ─────────────────────────────────────────────── */
+    function showNextQ() {
+      // Filter any buffer items whose topic was gapped since fetch
+      while (state.buffer.length) {
+        var st = state.topicStats[state.buffer[0].topic];
+        if (st && st.gapped) { state.buffer.shift(); continue; }
+        break;
+      }
+
+      if (!state.buffer.length) {
+        if (allGapped() || state.answers.length >= state.profile.totalQuestions) { finishTest(); return; }
+
+        // Consume pre-fetched batch instantly
+        if (Array.isArray(pendingBatch)) {
+          var offset = state.questions.length;
+          pendingBatch.forEach(function (q, i) { q.id = 'q' + (offset + i + 1); });
+          state.buffer = pendingBatch;
+          pendingBatch = null;
+          emptyFetches = 0;
+          persist();
+          showNextQ();
+          return;
+        }
+
+        // Pre-fetch still in flight — show loading and wait
+        if (pendingBatch === 'fetching') {
+          showView('s6-loading');
+          var loadMsg = document.getElementById('s6-load-msg');
+          if (loadMsg) loadMsg.textContent = 'Generating questions…';
+          pendingCallback = showNextQ;
+          return;
+        }
+
+        // Nothing in flight — fetch now
+        if (++emptyFetches > 2) { finishTest(); return; }
+        fetchBatch();
+        return;
+      }
+
+      var q = state.buffer.shift();
+      state.questions.push(q);
+      persist();
+      updateProgress(q);
+      renderQ(q);
+      showView('s6-question');
+
+      // Kick off background pre-fetch for the next batch
+      if (pendingBatch === null) {
+        prefetchNext();
+      }
+    }
+
+    function updateProgress(q) {
+      var answered = state.answers.length;
+      var total    = state.profile.totalQuestions;
+      var current  = state.questions.length;
+      var fill = document.getElementById('s6-progress-fill');
+      if (fill) fill.style.width = Math.round(answered / total * 100) + '%';
+      var numEl = document.getElementById('s6-q-num');
+      if (numEl) numEl.textContent = current;
+      var totEl = document.getElementById('s6-q-total');
+      if (totEl) totEl.textContent = total;
+      var meta = document.getElementById('s6-q-meta');
+      if (meta) meta.textContent = q.topic + ' · Difficulty ' + (q.difficulty || state.difficulty);
+    }
+
+    /* ── Render question ────────────────────────────────────────────────── */
+    function renderQ(q) {
+      var card = document.getElementById('s6-q-card');
+      card.innerHTML = '';
+      delete card.dataset.revealed;
+
+      // Header: type label + question text
+      var hdr = mk('div');
+      hdr.innerHTML =
+        '<p class="s6-type-label">' + esc(TYPE_LABELS[q.type] || q.type) + '</p>' +
+        '<p class="s6-question-text">' + esc(q.question) + '</p>';
+      card.appendChild(hdr);
+
+      // Input area
+      var wrap = mk('div');
+
+      if (q.type === 'multiple_choice') {
+        wrap.className = 'answer-options';
+        var keys = ['A', 'B', 'C', 'D'];
+        (q.options || []).forEach(function (opt, i) {
+          var d = mk('div', 'answer-option');
+          d.dataset.value = opt;
+          d.innerHTML = '<div class="answer-key">' + (keys[i] || String.fromCharCode(65 + i)) + '</div><span>' + esc(opt) + '</span>';
+          d.addEventListener('click', function () {
+            if (card.dataset.revealed) return;
+            wrap.querySelectorAll('.answer-option').forEach(function (o) { o.classList.remove('selected'); });
+            d.classList.add('selected');
+          });
+          wrap.appendChild(d);
+        });
+
+      } else if (q.type === 'true_false') {
+        wrap.className = 's6-tf-group';
+        ['True', 'False'].forEach(function (val) {
+          var btn = document.createElement('button');
+          btn.className = 's6-tf-btn';
+          btn.textContent = val;
+          btn.dataset.value = val;
+          btn.addEventListener('click', function () {
+            if (card.dataset.revealed) return;
+            wrap.querySelectorAll('.s6-tf-btn').forEach(function (b) { b.classList.remove('selected'); });
+            btn.classList.add('selected');
+          });
+          wrap.appendChild(btn);
+        });
+
+      } else {
+        var isArea = (q.type === 'short_answer' || q.type === 'essay');
+        var inp = document.createElement(isArea ? 'textarea' : 'input');
+        inp.id        = 's6-open-inp';
+        inp.className = 'form-' + (isArea ? 'textarea' : 'input');
+        if (isArea) {
+          inp.rows        = q.type === 'essay' ? 7 : 4;
+          inp.placeholder = q.type === 'essay'
+            ? 'Write your extended response here…'
+            : 'Write your answer here (1–3 sentences)…';
+        } else {
+          inp.type        = 'text';
+          inp.placeholder = 'Type your answer here…';
+        }
+        wrap.appendChild(inp);
+      }
+      card.appendChild(wrap);
+
+      // Explanation slot (empty until revealed)
+      var explSlot = mk('div', '', 's6-expl');
+      card.appendChild(explSlot);
+
+      // Footer
+      var footer = mk('div', 'row row-between', 's6-footer');
+      var hint = mk('span', 'text-sm text-muted', 's6-hint');
+      hint.textContent = q.type === 'multiple_choice' ? 'Select an answer to continue'
+                       : q.type === 'true_false'      ? 'Choose True or False'
+                       : 'Write your answer, then submit';
+
+      var submitBtn = document.createElement('button');
+      submitBtn.className   = 'btn btn-primary';
+      submitBtn.textContent = 'Submit Answer →';
+      submitBtn.addEventListener('click', function () { onSubmit(q, wrap, footer, hint, explSlot, card); });
+
+      footer.appendChild(hint);
+      footer.appendChild(submitBtn);
+      card.appendChild(footer);
+    }
+
+    /* ── Submit handler ─────────────────────────────────────────────────── */
+    function onSubmit(q, wrap, footer, hint, explSlot, card) {
+      if (card.dataset.revealed) return;
+      var isOpen = OPEN_ENDED.includes(q.type);
+      var given;
+
+      if (q.type === 'multiple_choice') {
+        var sel = wrap.querySelector('.answer-option.selected');
+        if (!sel) { flash(hint, 'Please select an answer first.'); return; }
+        given = sel.dataset.value;
+      } else if (q.type === 'true_false') {
+        var selBtn = wrap.querySelector('.s6-tf-btn.selected');
+        if (!selBtn) { flash(hint, 'Please choose True or False.'); return; }
+        given = selBtn.dataset.value;
+      } else {
+        var inp = document.getElementById('s6-open-inp');
+        given = inp ? inp.value.trim() : '';
+        if (!given) { flash(hint, 'Please write your answer first.'); return; }
+      }
+
+      card.dataset.revealed = '1';
+      var isCorrect = isOpen
+        ? null
+        : given.trim().toLowerCase() === String(q.correct || '').trim().toLowerCase();
+
+      reveal(q, given, isCorrect, isOpen, wrap, footer, explSlot);
+    }
+
+    function flash(el, msg) {
+      var orig  = el.textContent;
+      var origC = el.style.color;
+      el.textContent  = msg;
+      el.style.color  = 'var(--c-error)';
+      setTimeout(function () { el.textContent = orig; el.style.color = origC; }, 2000);
+    }
+
+    /* ── Reveal answer ──────────────────────────────────────────────────── */
+    function reveal(q, given, isCorrect, isOpen, wrap, footer, explSlot) {
+      // Style inputs to show correct / incorrect
+      if (q.type === 'multiple_choice') {
+        wrap.querySelectorAll('.answer-option').forEach(function (o) {
+          if (o.dataset.value === q.correct) {
+            o.classList.add('correct');
+            var k = o.querySelector('.answer-key');
+            if (k) { k.style.background = 'var(--c-success)'; k.style.borderColor = 'var(--c-success)'; k.style.color = '#fff'; }
+          } else if (o.dataset.value === given && !isCorrect) {
+            o.classList.add('incorrect');
+          }
+        });
+      } else if (q.type === 'true_false') {
+        wrap.querySelectorAll('.s6-tf-btn').forEach(function (b) {
+          if (b.dataset.value === q.correct) b.classList.add('correct');
+          else if (b.dataset.value === given && !isCorrect) b.classList.add('incorrect');
+        });
+      } else {
+        var inp = document.getElementById('s6-open-inp');
+        if (inp) inp.disabled = true;
+      }
+
+      // Build result + explanation
+      explSlot.innerHTML = '';
+
+      var resultEl = mk('div', 's6-result-banner ' + (isOpen ? 's6-result-model' : (isCorrect ? 's6-result-correct' : 's6-result-incorrect')));
+      if (isOpen) {
+        resultEl.innerHTML = '<strong>Model answer:</strong>&ensp;' + esc(q.correct);
+      } else if (isCorrect) {
+        resultEl.innerHTML = '<strong>✓ Correct!</strong>';
+      } else {
+        resultEl.innerHTML = '<strong>✗ Incorrect.</strong>&ensp;Correct answer: <strong>' + esc(q.correct) + '</strong>';
+      }
+      explSlot.appendChild(resultEl);
+
+      if (q.explanation) {
+        var box = mk('div', 's6-explanation');
+        box.innerHTML =
+          '<p class="text-xs font-semibold text-muted" style="letter-spacing:.06em;text-transform:uppercase;margin-bottom:var(--sp-2)">Explanation</p>' +
+          '<p class="text-sm text-secondary" style="line-height:1.6">' + esc(q.explanation) + '</p>';
+        explSlot.appendChild(box);
+      }
+
+      // Replace footer
+      footer.innerHTML = '';
+      if (isOpen) {
+        var lbl = mk('span', 'text-sm text-secondary');
+        lbl.textContent = 'Was your answer correct?';
+        var btnRow = mk('div', 'row gap-3');
+
+        var yBtn = document.createElement('button');
+        yBtn.className = 'btn btn-sm';
+        yBtn.style.cssText = 'background:var(--c-success-soft);color:var(--c-success);border:1.5px solid #A8DCBE';
+        yBtn.textContent = '✓ Yes, correct';
+        yBtn.onclick = function () { recordAndAdvance(q, given, true); };
+
+        var nBtn = document.createElement('button');
+        nBtn.className = 'btn btn-sm';
+        nBtn.style.cssText = 'background:var(--c-error-soft);color:var(--c-error);border:1.5px solid #E8A5A0';
+        nBtn.textContent = '✗ No, incorrect';
+        nBtn.onclick = function () { recordAndAdvance(q, given, false); };
+
+        btnRow.appendChild(yBtn);
+        btnRow.appendChild(nBtn);
+        footer.appendChild(lbl);
+        footer.appendChild(btnRow);
+      } else {
+        var spacer = mk('span');
+        var nextBtn = document.createElement('button');
+        nextBtn.className   = 'btn btn-primary';
+        nextBtn.textContent = 'Next Question →';
+        nextBtn.onclick = function () { recordAndAdvance(q, given, isCorrect); };
+        footer.appendChild(spacer);
+        footer.appendChild(nextBtn);
+      }
+    }
+
+    /* ── Record answer and advance ──────────────────────────────────────── */
+    function recordAndAdvance(q, given, isCorrect) {
+      // Update topic stats
+      if (!state.topicStats[q.topic]) {
+        state.topicStats[q.topic] = { correct: 0, attempted: 0, gapped: false, drillCount: 0 };
+      }
+      var st = state.topicStats[q.topic];
+      st.attempted++;
+      if (isCorrect) st.correct++;
+
+      // Adaptive difficulty
+      state.difficulty = isCorrect
+        ? Math.min(MAX_DIFF, state.difficulty + 1)
+        : Math.max(MIN_DIFF, state.difficulty - 1);
+
+      // Budget-aware adaptive gap detection
+      var budget        = state.topicBudget || Infinity;
+      var answeredSoFar = state.answers.length + 1; // +1 because push happens after this block
+      var breadthMet    = answeredSoFar >= (state.breadthThreshold || 0);
+      var remaining     = state.profile.totalQuestions - answeredSoFar;
+      var uncovered     = countUncoveredTopics();
+      var drillCap      = (breadthMet && remaining > uncovered) ? 2 : 1;
+      var failing       = st.attempted >= 3 && st.correct / st.attempted < 0.5;
+
+      if (state.profile.adaptiveMode === 'stop_and_move_on') {
+        // Gap when per-topic budget is exhausted or topic is clearly failing
+        if (st.attempted >= budget || failing) st.gapped = true;
+      } else {
+        // drill_deeper: honour base budget for breadth, then drill if eligible
+        if (st.attempted >= budget) {
+          var extra = st.attempted - budget; // questions answered beyond base allocation
+          if (extra === 0) {
+            // Just exhausted base budget — allow drill only if failing AND breadth met
+            if (!(failing && breadthMet)) st.gapped = true;
+          } else {
+            // In drill pass — gap when cap reached or topic is no longer failing
+            if (extra >= drillCap || !failing) st.gapped = true;
+          }
+        }
+        // Below budget: keep topic active regardless of score to preserve breadth
+      }
+
+      state.answers.push({
+        questionId: q.id,
+        topic:      q.topic,
+        type:       q.type,
+        given:      given,
+        correct:    q.correct,
+        isCorrect:  isCorrect,
+        difficulty: q.difficulty || state.difficulty
+      });
+
+      persist();
+
+      if (state.answers.length >= state.profile.totalQuestions || allGapped()) {
+        finishTest();
+      } else {
+        showNextQ();
+      }
+    }
+
+    /* ── Finish test ────────────────────────────────────────────────────── */
+    function finishTest() {
+      showView('s6-complete');
+      var correct = state.answers.filter(function (a) { return a.isCorrect; }).length;
+      var total   = state.answers.length;
+      localStorage.setItem('dino_session_results', JSON.stringify({
+        examName:     state.profile.examName,
+        totalAnswered:total,
+        totalCorrect: correct,
+        pct:          total ? Math.round(correct / total * 100) : 0,
+        topicStats:   state.topicStats,
+        answers:      state.answers,
+        questions:    state.questions,
+        adaptiveMode: state.profile.adaptiveMode,
+        durationMs:   Date.now() - state.startTime,
+        completedAt:  new Date().toISOString()
+      }));
+      localStorage.removeItem('dino_test_state');
+      setTimeout(function () { goTo(7); }, 1200);
+    }
+
+    /* ── Persistence ────────────────────────────────────────────────────── */
+    function persist() {
+      try {
+        localStorage.setItem('dino_test_state', JSON.stringify({
+          profile:    state.profile,
+          questions:  state.questions,
+          answers:    state.answers,
+          topicStats: state.topicStats,
+          difficulty: state.difficulty,
+          buffer:     state.buffer,
+          startTime:  state.startTime
+        }));
+      } catch (e) { /* quota exceeded — non-fatal */ }
+    }
+
+    /* ── Tiny DOM helpers ───────────────────────────────────────────────── */
+    function mk(tag, cls, id) {
+      var el = document.createElement(tag || 'div');
+      if (cls) el.className = cls;
+      if (id)  el.id        = id;
+      return el;
+    }
+
+    function esc(s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  })();
+
+  /* ─── Module 7: Report & PDF Generation ──────────────────────────────── */
+  (function () {
+    var MAX_RETRY    = 2;
+    var gapAnalysis  = null;
+    var gapQuestions = [];
+
+    var TYPE_LABELS_7 = {
+      multiple_choice: 'Multiple Choice',
+      short_answer:    'Short Answer',
+      true_false:      'True / False',
+      fill_in_blank:   'Fill in the Blank',
+      essay:           'Essay'
+    };
+
+    /* ── Screen hook ────────────────────────────────────────────────────── */
+    window._screenHooks = window._screenHooks || {};
+    window._screenHooks[7] = function () {
+      gapAnalysis  = null;
+      gapQuestions = [];
+      var results = JSON.parse(localStorage.getItem('dino_session_results') || 'null');
+      if (!results) {
+        showErr7('No session results found. Please complete the diagnostic test first.');
+        return;
+      }
+      showView7('s7-loading');
+      setLoad7('Analyzing your performance…');
+      runGapAnalysis(results);
+    };
+
+    window.s7Retry = function () {
+      var results = JSON.parse(localStorage.getItem('dino_session_results') || 'null');
+      if (!results) { showErr7('No session results found.'); return; }
+      showView7('s7-loading');
+      setLoad7('Analyzing your performance…');
+      runGapAnalysis(results);
+    };
+
+    /* ── View helpers ───────────────────────────────────────────────────── */
+    function showView7(id) {
+      ['s7-loading', 's7-error', 's7-report'].forEach(function (v) {
+        var el = document.getElementById(v);
+        if (el) el.style.display = (v === id) ? '' : 'none';
+      });
+    }
+
+    function showErr7(msg) {
+      showView7('s7-error');
+      var el = document.getElementById('s7-error-msg');
+      if (el) el.textContent = ' ' + msg;
+    }
+
+    function setLoad7(msg) {
+      var el = document.getElementById('s7-load-msg');
+      if (el) el.textContent = msg;
+    }
+
+    /* ── API Call 1: Gap Analysis ───────────────────────────────────────── */
+    function runGapAnalysis(results) {
+      // Pull topic importance + source from material index
+      var index = JSON.parse(localStorage.getItem('dino_material_index') || 'null');
+      var topicMeta = {};
+      if (index && index.subjects) {
+        index.subjects.forEach(function (s) {
+          (s.topics || []).forEach(function (t) {
+            topicMeta[t.title] = { importance: t.importance || 'medium', source: t.source || '' };
+          });
+        });
+      }
+
+      // Derive confidence trajectory from answer history
+      var answers = results.answers || [];
+      var trajectory = 'consistent';
+      if (answers.length >= 4) {
+        var half = Math.floor(answers.length / 2);
+        function cr(arr) { return arr.filter(function (a) { return a.isCorrect; }).length / arr.length; }
+        var delta = cr(answers.slice(half)) - cr(answers.slice(0, half));
+        if (delta >= 0.12) trajectory = 'improving';
+        else if (delta <= -0.12) trajectory = 'declining';
+      }
+
+      // Build topic performance lines enriched with importance + source
+      var topicLines = Object.keys(results.topicStats || {}).map(function (t) {
+        var s = results.topicStats[t];
+        var pct = s.attempted ? Math.round(s.correct / s.attempted * 100) : 0;
+        var meta = topicMeta[t] || {};
+        return t + ': ' + s.correct + '/' + s.attempted + ' (' + pct + '%)' +
+          (s.gapped ? ' [gap]' : '') +
+          (meta.importance ? ' [exam importance: ' + meta.importance + ']' : '') +
+          (meta.source ? ' [source: ' + meta.source + ']' : '');
+      }).join('\n');
+
+      var sys =
+        'You are a personal study coach giving a thorough post-diagnostic debrief. ' +
+        'Analyze the student\'s results and return only a raw JSON object with no text before or after it, ' +
+        'no markdown, no backticks. Be specific, actionable, and encouraging. ' +
+        'Reference the student\'s actual material sources by name. ' +
+        'Return exactly this structure (all fields required): ' +
+        '{"overallScore":number(0-100),"summary":"2-3 sentence overall summary",' +
+        '"confidenceTrajectory":"improving|declining|consistent",' +
+        '"trajectoryInsight":"1 sentence — what this pattern means for how to study",' +
+        '"strengths":[{"topic":"string","insight":"1 sentence — solid grasp, can deprioritize"}],' +
+        '"gaps":[{"topic":"string","score":number(0-100),"priority":"high|medium|low",' +
+        '"studyInstruction":"specific instruction referencing source file by name",' +
+        '"source":"filename.pdf or empty string",' +
+        '"estimatedStudyTime":"e.g. 20 minutes",' +
+        '"focusPoints":["specific subtopic","specific subtopic"]}],' +
+        '"prioritizedStudyPlan":[{"order":number,"topic":"string",' +
+        '"reason":"why highest priority — gap severity + exam importance",' +
+        '"action":"concrete specific action referencing source file",' +
+        '"estimatedTime":"e.g. 20 minutes"}],' +
+        '"preExamChecklist":["short specific action item 1"],' +
+        '"nextSessionFocus":"1-2 sentences on what next diagnostic will emphasize and why"}. ' +
+        'Rules: gaps = topics below 70%; strengths = 70% and above. ' +
+        'prioritizedStudyPlan ranks gaps by gap severity multiplied by exam importance (high importance amplifies priority). ' +
+        'preExamChecklist = 3-5 most critical items from highest-priority gaps. ' +
+        'Only include topics from the performance data.';
+
+      var usr =
+        'EXAM: ' + (results.examName || 'Diagnostic') + '\n' +
+        'OVERALL: ' + (results.totalCorrect || 0) + '/' + (results.totalAnswered || 0) +
+        ' (' + (results.pct || 0) + '%)\n' +
+        'CONFIDENCE TRAJECTORY: ' + trajectory + '\n' +
+        'TOPIC PERFORMANCE:\n' + (topicLines || 'No topic data available.');
+
+      attemptJson7(sys, usr, 0, 3000, function (obj) {
+        if (!obj.confidenceTrajectory) obj.confidenceTrajectory = trajectory;
+        gapAnalysis = obj;
+        if (!obj.gaps || !obj.gaps.length) {
+          renderReport(results, obj, []);
+        } else {
+          setLoad7('Generating your gap practice test…');
+          runGapTest(results, obj);
+        }
+      }, function (err) {
+        showErr7('Could not generate gap analysis: ' + (err.message || 'unknown error'));
+      });
+    }
+
+    /* ── API Call 2: Mini Gap Test ──────────────────────────────────────── */
+    function runGapTest(results, analysis) {
+      var topicList = analysis.gaps.map(function (g) { return g.topic; }).join(', ');
+      var count = Math.min(10, Math.max(5, analysis.gaps.length * 2));
+
+      var sys =
+        'Return only a raw JSON array. No text before it. No text after it. No markdown. ' +
+        'No backticks. No trailing commas. No comments. Every string value must use double quotes. ' +
+        'Your entire response must start with [ and end with ]. ' +
+        'Each object must have exactly: id (string), type (multiple_choice|true_false|short_answer), ' +
+        'topic (string), difficulty (integer 2-4), question (string), ' +
+        'options (4-string array for multiple_choice, null otherwise), ' +
+        'correct (exact answer string; for true_false use "True" or "False"), explanation (string).';
+
+      var usr =
+        'Generate exactly ' + count + ' gap-test questions focused on these weak topics: ' + topicList + '. ' +
+        'Use mostly multiple_choice and true_false. Difficulty 2-4. ' +
+        'Questions should directly target the student\'s knowledge gaps.';
+
+      attemptJson7(sys, usr, 0, 2000, function (arr) {
+        arr.forEach(function (q, i) { q.id = 'gq' + (i + 1); });
+        renderReport(results, analysis, arr);
+      }, function () {
+        renderReport(results, analysis, []);
+      });
+    }
+
+    /* ── JSON extraction + retry ────────────────────────────────────────── */
+    function attemptJson7(sys, usr, tries, maxTok, onOk, onFail) {
+      window.callClaude(sys, usr, maxTok).then(function (raw) {
+        var text = raw.trim();
+        var mo = text.match(/\{[\s\S]*\}/);
+        var ma = text.match(/\[[\s\S]*\]/);
+        if (mo && ma) {
+          text = (mo.index <= ma.index) ? mo[0] : ma[0];
+        } else if (mo) {
+          text = mo[0];
+        } else if (ma) {
+          text = ma[0];
+        }
+        text = text.replace(/,\s*([}\]])/g, '$1');
+        text = text.replace(/\/\/[^\n]*/g, '');
+        text = text.replace(/\/\*[\s\S]*?\*\//g, '');
+        onOk(JSON.parse(text));
+      }).catch(function (err) {
+        if (tries < MAX_RETRY) {
+          attemptJson7(sys, usr, tries + 1, maxTok, onOk, onFail);
+        } else {
+          onFail(err);
+        }
+      });
+    }
+
+    /* ── Render full report ─────────────────────────────────────────────── */
+    function renderReport(results, analysis, questions) {
+      gapQuestions = questions;
+      var container = document.getElementById('s7-report');
+      container.innerHTML = '';
+
+      var pct        = analysis.overallScore != null ? analysis.overallScore : (results.pct || 0);
+      var scoreColor = pct >= 80 ? 'var(--c-success)' : pct >= 60 ? 'var(--c-accent)' : 'var(--c-error)';
+      var scoreLabel = pct >= 80 ? 'Strong' : pct >= 60 ? 'Fair' : 'Needs Work';
+      var examDate   = results.completedAt
+        ? new Date(results.completedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+        : new Date().toLocaleDateString();
+      var circ = 2 * Math.PI * 52;
+      var dash = ((pct / 100) * circ).toFixed(1);
+      var traj      = analysis.confidenceTrajectory || 'consistent';
+      var trajClass = traj === 'improving' ? 's7-traj-improving' : traj === 'declining' ? 's7-traj-declining' : 's7-traj-consistent';
+      var trajArrow = traj === 'improving' ? '&#8593;' : traj === 'declining' ? '&#8595;' : '&#8594;';
+      var trajLabel = traj.charAt(0).toUpperCase() + traj.slice(1);
+
+      // ── Score header ──
+      var hCard = mk7('div', 'card');
+      hCard.innerHTML =
+        '<div class="card-body">' +
+          '<div class="s7-report-header">' +
+            '<div class="score-ring-wrap">' +
+              '<div class="score-ring">' +
+                '<svg width="120" height="120" viewBox="0 0 120 120" style="transform:rotate(-90deg)">' +
+                  '<circle cx="60" cy="60" r="52" fill="none" stroke="var(--c-border)" stroke-width="8"/>' +
+                  '<circle cx="60" cy="60" r="52" fill="none" stroke="' + scoreColor + '" stroke-width="8" ' +
+                    'stroke-dasharray="' + dash + ' ' + circ.toFixed(1) + '" stroke-linecap="round"/>' +
+                '</svg>' +
+                '<div class="score-ring-text">' +
+                  '<span class="score-pct" style="color:' + scoreColor + '">' + pct + '%</span>' +
+                  '<span class="score-label-sm">' + scoreLabel + '</span>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="s7-header-info">' +
+              '<div class="step-eyebrow">Diagnostic Report</div>' +
+              '<h2 class="step-title t-display" style="font-size:1.5rem;margin-bottom:var(--sp-2)">' + esc7(results.examName || 'Diagnostic Report') + '</h2>' +
+              '<p class="text-sm text-muted">' + esc7(examDate) + '&ensp;&middot;&ensp;' + (results.totalAnswered || 0) + ' questions answered</p>' +
+              '<div style="margin-top:var(--sp-3)">' +
+                '<span class="s7-trajectory ' + trajClass + '">' + trajArrow + '&ensp;Performance ' + trajLabel + '</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          (analysis.summary ? '<p class="s7-summary" style="margin-top:var(--sp-4)">' + esc7(analysis.summary) + '</p>' : '') +
+          (analysis.trajectoryInsight ? '<p class="text-sm text-muted" style="margin-top:var(--sp-2);font-style:italic">' + esc7(analysis.trajectoryInsight) + '</p>' : '') +
+        '</div>';
+      container.appendChild(hCard);
+
+      // ── Prioritized Study Plan ──
+      if (analysis.prioritizedStudyPlan && analysis.prioritizedStudyPlan.length) {
+        var planCard = mk7('div', 'card s7-section-card');
+        var planItems = analysis.prioritizedStudyPlan.map(function (step) {
+          return '<div class="s7-plan-item">' +
+            '<div class="s7-plan-num">' + esc7(String(step.order || '')) + '</div>' +
+            '<div class="s7-plan-body">' +
+              '<div class="s7-plan-topic">' + esc7(step.topic || '') + '</div>' +
+              (step.reason ? '<div class="s7-plan-reason">' + esc7(step.reason) + '</div>' : '') +
+              (step.action ? '<div class="s7-plan-action">' + esc7(step.action) + '</div>' : '') +
+              (step.estimatedTime ? '<div class="s7-plan-time">&#9201;&ensp;' + esc7(step.estimatedTime) + '</div>' : '') +
+            '</div>' +
+          '</div>';
+        }).join('');
+        planCard.innerHTML =
+          '<div class="card-body">' +
+            '<h3 class="s7-section-title"><span class="s7-section-icon" style="background:var(--c-accent-soft);color:var(--c-accent)">&#9654;</span>Prioritized Study Plan</h3>' +
+            '<div class="s7-plan-list">' + planItems + '</div>' +
+          '</div>';
+        container.appendChild(planCard);
+      }
+
+      // ── Knowledge Gaps ──
+      if (analysis.gaps && analysis.gaps.length) {
+        var gCard = mk7('div', 'card s7-section-card');
+        var gHtml = analysis.gaps.map(function (g) {
+          var bc = g.priority === 'high' ? 'badge-error' : g.priority === 'medium' ? 'badge-warn' : 'badge-muted';
+          var pl = g.priority ? (g.priority.charAt(0).toUpperCase() + g.priority.slice(1) + ' priority') : '';
+          var chips = (g.focusPoints || []).map(function (fp) {
+            return '<span class="s7-focus-chip">' + esc7(fp) + '</span>';
+          }).join('');
+          return '<div class="s7-gap-item">' +
+            '<div class="s7-gap-header">' +
+              '<span class="s7-gap-topic">' + esc7(g.topic) + '</span>' +
+              '<div class="s7-gap-meta">' +
+                '<span class="text-sm text-secondary">' + (g.score || 0) + '%</span>' +
+                (pl ? '<span class="badge ' + bc + '">' + pl + '</span>' : '') +
+              '</div>' +
+            '</div>' +
+            '<p class="s7-gap-instruction">' + esc7(g.studyInstruction || '') + '</p>' +
+            (g.source ? '<p class="s7-source-tag">&#128196;&ensp;' + esc7(g.source) + '</p>' : '') +
+            (g.estimatedStudyTime ? '<div class="s7-time-tag">&#9201;&ensp;' + esc7(g.estimatedStudyTime) + '</div>' : '') +
+            (chips ? '<div class="s7-focus-chips">' + chips + '</div>' : '') +
+          '</div>';
+        }).join('');
+        gCard.innerHTML =
+          '<div class="card-body">' +
+            '<h3 class="s7-section-title"><span class="s7-section-icon s7-icon-gap">!</span>Knowledge Gaps</h3>' +
+            '<div class="s7-gaps-list">' + gHtml + '</div>' +
+          '</div>';
+        container.appendChild(gCard);
+      } else {
+        var pCard = mk7('div', 'card s7-section-card');
+        pCard.innerHTML =
+          '<div class="card-body"><div class="banner banner-success"><span class="banner-icon">&#9733;</span>' +
+          '<div class="banner-body"><strong>Excellent work!</strong> You showed strong knowledge across all tested topics. No gaps to address.</div></div></div>';
+        container.appendChild(pCard);
+      }
+
+      // ── What You Know Well (Strengths) ──
+      if (analysis.strengths && analysis.strengths.length) {
+        var sCard = mk7('div', 'card s7-section-card');
+        var sItems = analysis.strengths.map(function (s) {
+          var topic   = (typeof s === 'string') ? s : (s.topic || '');
+          var insight = (typeof s === 'object' && s.insight) ? s.insight : null;
+          return '<div class="s7-strength-item">' +
+            '<span class="badge badge-success">' + esc7(topic) + '</span>' +
+            (insight ? '<p class="s7-strength-insight">' + esc7(insight) + '</p>' : '') +
+          '</div>';
+        }).join('');
+        sCard.innerHTML =
+          '<div class="card-body">' +
+            '<h3 class="s7-section-title"><span class="s7-section-icon s7-icon-strength">&#10003;</span>What You Know Well</h3>' +
+            '<div class="s7-strength-list">' + sItems + '</div>' +
+          '</div>';
+        container.appendChild(sCard);
+      }
+
+      // ── Night-Before Checklist ──
+      if (analysis.preExamChecklist && analysis.preExamChecklist.length) {
+        var cCard = mk7('div', 'card s7-section-card');
+        var cItems = analysis.preExamChecklist.map(function (item, i) {
+          return '<div class="s7-check-item" id="s7-chk-' + i + '" onclick="window.toggleCheck7(' + i + ')">' +
+            '<div class="s7-check-box"></div><span>' + esc7(item) + '</span>' +
+          '</div>';
+        }).join('');
+        cCard.innerHTML =
+          '<div class="card-body">' +
+            '<h3 class="s7-section-title">' +
+              '<span class="s7-section-icon" style="background:var(--c-warn-soft);color:var(--c-warn)">&#9745;</span>' +
+              'Night-Before Checklist' +
+            '</h3>' +
+            '<div class="s7-checklist">' + cItems + '</div>' +
+          '</div>';
+        container.appendChild(cCard);
+      }
+
+      // ── Next Session Focus ──
+      if (analysis.nextSessionFocus) {
+        var nWrap = mk7('div');
+        nWrap.innerHTML =
+          '<div class="s7-next-session">' +
+            '<span class="s7-next-icon">&#128200;</span>' +
+            '<div class="s7-next-body">' +
+              '<span class="s7-next-label">Next Diagnostic Session</span>' +
+              '<p class="s7-next-text">' + esc7(analysis.nextSessionFocus) + '</p>' +
+            '</div>' +
+          '</div>';
+        container.appendChild(nWrap);
+      }
+
+      // ── Action row ──
+      var aRow = mk7('div', 'row row-between s7-action-row');
+      var newBtn = document.createElement('button');
+      newBtn.className   = 'btn btn-secondary';
+      newBtn.textContent = 'Start New Session';
+      newBtn.onclick     = function () { goTo(1); };
+      var pdfBtn = document.createElement('button');
+      pdfBtn.className   = 'btn btn-accent btn-lg';
+      pdfBtn.textContent = '↓ Download PDF Report';
+      pdfBtn.onclick     = function () { downloadPDF(results, analysis, gapQuestions); };
+      aRow.appendChild(newBtn);
+      aRow.appendChild(pdfBtn);
+      container.appendChild(aRow);
+
+      // ── Mini Gap Test ──
+      if (questions.length) {
+        var divEl = mk7('div', 'divider');
+        divEl.style.margin = 'var(--sp-10) 0 var(--sp-6)';
+        container.appendChild(divEl);
+        var tHdr = mk7('div', 'stack stack-3');
+        tHdr.innerHTML =
+          '<h2 class="step-title t-display" style="font-size:1.5rem">Gap Practice Test</h2>' +
+          '<p class="step-subtitle" style="font-size:.95rem">Work through these ' + questions.length +
+          ' targeted questions. Answer key appears after each submission.</p>';
+        container.appendChild(tHdr);
+        var gWrap = mk7('div', 'stack stack-6');
+        gWrap.style.marginTop = 'var(--sp-6)';
+        container.appendChild(gWrap);
+        renderGapTest(questions, gWrap);
+      }
+
+      showView7('s7-report');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    window.toggleCheck7 = function (i) {
+      var el = document.getElementById('s7-chk-' + i);
+      if (el) el.classList.toggle('checked');
+    };
+
+    /* ── Gap test question rendering ────────────────────────────────────── */
+    function renderGapTest(questions, wrap) {
+      questions.forEach(function (q, idx) {
+        var card = mk7('div', 'card');
+        var body = mk7('div', 'card-body stack stack-5');
+
+        var hdr = mk7('div', 'stack stack-3');
+        hdr.innerHTML =
+          '<p class="s6-type-label">' + esc7(TYPE_LABELS_7[q.type] || q.type) + '</p>' +
+          '<p class="s6-question-text">' + esc7(q.question) + '</p>';
+        body.appendChild(hdr);
+
+        var inputWrap = mk7('div');
+
+        if (q.type === 'multiple_choice') {
+          inputWrap.className = 'answer-options';
+          var keys = ['A', 'B', 'C', 'D'];
+          (q.options || []).forEach(function (opt, i) {
+            var d = mk7('div', 'answer-option');
+            d.dataset.value = opt;
+            d.innerHTML = '<div class="answer-key">' + (keys[i] || String.fromCharCode(65 + i)) + '</div>' +
+                          '<span>' + esc7(opt) + '</span>';
+            d.addEventListener('click', function () {
+              if (inputWrap.dataset.locked) return;
+              inputWrap.querySelectorAll('.answer-option').forEach(function (o) { o.classList.remove('selected'); });
+              d.classList.add('selected');
+            });
+            inputWrap.appendChild(d);
+          });
+
+        } else if (q.type === 'true_false') {
+          inputWrap.className = 's6-tf-group';
+          ['True', 'False'].forEach(function (val) {
+            var btn = document.createElement('button');
+            btn.className = 's6-tf-btn';
+            btn.textContent = val;
+            btn.dataset.value = val;
+            btn.addEventListener('click', function () {
+              if (inputWrap.dataset.locked) return;
+              inputWrap.querySelectorAll('.s6-tf-btn').forEach(function (b) { b.classList.remove('selected'); });
+              btn.classList.add('selected');
+            });
+            inputWrap.appendChild(btn);
+          });
+
+        } else {
+          var isArea = (q.type === 'short_answer' || q.type === 'essay');
+          var inp = document.createElement(isArea ? 'textarea' : 'input');
+          inp.id        = 's7-inp-' + idx;
+          inp.className = 'form-' + (isArea ? 'textarea' : 'input');
+          if (isArea) { inp.rows = 3; inp.placeholder = 'Write your answer here…'; }
+          else { inp.type = 'text'; inp.placeholder = 'Type your answer here…'; }
+          inputWrap.appendChild(inp);
+        }
+        body.appendChild(inputWrap);
+
+        var revSlot = mk7('div');
+        body.appendChild(revSlot);
+
+        var footer = mk7('div', 'row row-between');
+        var hint = mk7('span', 'text-sm text-muted');
+        hint.textContent = q.type === 'multiple_choice' ? 'Select an answer to submit'
+                         : q.type === 'true_false'      ? 'Choose True or False'
+                         : 'Write your answer, then submit';
+        var submitBtn = document.createElement('button');
+        submitBtn.className   = 'btn btn-primary';
+        submitBtn.textContent = 'Submit →';
+        submitBtn.addEventListener('click', (function (q, idx, inputWrap, footer, revSlot, hint) {
+          return function () { submitGapAnswer(q, idx, inputWrap, footer, revSlot, hint); };
+        })(q, idx, inputWrap, footer, revSlot, hint));
+        footer.appendChild(hint);
+        footer.appendChild(submitBtn);
+        body.appendChild(footer);
+
+        card.appendChild(body);
+        wrap.appendChild(card);
+      });
+    }
+
+    function submitGapAnswer(q, idx, inputWrap, footer, revSlot, hint) {
+      if (inputWrap.dataset.locked) return;
+      var isOpen = ['short_answer', 'fill_in_blank', 'essay'].indexOf(q.type) >= 0;
+      var given;
+
+      if (q.type === 'multiple_choice') {
+        var sel = inputWrap.querySelector('.answer-option.selected');
+        if (!sel) { flash7(hint, 'Please select an answer first.'); return; }
+        given = sel.dataset.value;
+      } else if (q.type === 'true_false') {
+        var selBtn = inputWrap.querySelector('.s6-tf-btn.selected');
+        if (!selBtn) { flash7(hint, 'Choose True or False first.'); return; }
+        given = selBtn.dataset.value;
+      } else {
+        var inp = document.getElementById('s7-inp-' + idx);
+        given = inp ? inp.value.trim() : '';
+        if (!given) { flash7(hint, 'Please write your answer first.'); return; }
+      }
+
+      inputWrap.dataset.locked = '1';
+      var isCorrect = isOpen ? null
+        : given.trim().toLowerCase() === String(q.correct || '').trim().toLowerCase();
+
+      // Style inputs
+      if (q.type === 'multiple_choice') {
+        inputWrap.querySelectorAll('.answer-option').forEach(function (o) {
+          if (o.dataset.value === q.correct) {
+            o.classList.add('correct');
+            var k = o.querySelector('.answer-key');
+            if (k) { k.style.background = 'var(--c-success)'; k.style.borderColor = 'var(--c-success)'; k.style.color = '#fff'; }
+          } else if (o.dataset.value === given && !isCorrect) {
+            o.classList.add('incorrect');
+          }
+        });
+      } else if (q.type === 'true_false') {
+        inputWrap.querySelectorAll('.s6-tf-btn').forEach(function (b) {
+          if (b.dataset.value === q.correct) b.classList.add('correct');
+          else if (b.dataset.value === given && !isCorrect) b.classList.add('incorrect');
+        });
+      } else {
+        var inpEl = document.getElementById('s7-inp-' + idx);
+        if (inpEl) inpEl.disabled = true;
+      }
+
+      // Result banner
+      var resultEl = mk7('div', 's6-result-banner ' + (isOpen ? 's6-result-model' : (isCorrect ? 's6-result-correct' : 's6-result-incorrect')));
+      if (isOpen) {
+        resultEl.innerHTML = '<strong>Model answer:</strong>&ensp;' + esc7(q.correct);
+      } else if (isCorrect) {
+        resultEl.innerHTML = '<strong>&#10003; Correct!</strong>';
+      } else {
+        resultEl.innerHTML = '<strong>&#10007; Incorrect.</strong>&ensp;Correct answer: <strong>' + esc7(q.correct) + '</strong>';
+      }
+      revSlot.appendChild(resultEl);
+
+      if (q.explanation) {
+        var box = mk7('div', 's6-explanation');
+        box.innerHTML =
+          '<p class="text-xs font-semibold text-muted" style="letter-spacing:.06em;text-transform:uppercase;margin-bottom:var(--sp-2)">Explanation</p>' +
+          '<p class="text-sm text-secondary" style="line-height:1.6">' + esc7(q.explanation) + '</p>';
+        revSlot.appendChild(box);
+      }
+
+      footer.innerHTML = '';
+      var done = mk7('span', 'text-sm text-muted');
+      done.textContent = 'Answer recorded';
+      footer.appendChild(done);
+    }
+
+    function flash7(el, msg) {
+      var orig = el.textContent, origC = el.style.color;
+      el.textContent = msg; el.style.color = 'var(--c-error)';
+      setTimeout(function () { el.textContent = orig; el.style.color = origC; }, 2000);
+    }
+
+    /* ── PDF Generation ─────────────────────────────────────────────────── */
+    function downloadPDF(results, analysis, questions) {
+      var jsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+      if (!jsPDF) { alert('PDF library not loaded. Please refresh and try again.'); return; }
+
+      var doc = new jsPDF({ unit: 'pt', format: 'letter' });
+      var W  = doc.internal.pageSize.getWidth();
+      var H  = doc.internal.pageSize.getHeight();
+      var M  = 56;
+      var CW = W - M * 2;
+      var y  = M;
+
+      function np(need) { if (y + need > H - M) { doc.addPage(); y = M; } }
+      function hr(col) {
+        doc.setDrawColor(col || '#DDD8CE'); doc.setLineWidth(0.5);
+        doc.line(M, y, W - M, y); y += 14;
+      }
+
+      var pct        = analysis.overallScore != null ? analysis.overallScore : (results.pct || 0);
+      var scoreColor = pct >= 80 ? '#256642' : pct >= 60 ? '#C96F2E' : '#A8312A';
+      var scoreBg    = pct >= 80 ? '#DDF0E6'  : pct >= 60 ? '#F5E0CC'  : '#FAEAEA';
+      var examDate   = results.completedAt
+        ? new Date(results.completedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+        : new Date().toLocaleDateString();
+      var traj      = analysis.confidenceTrajectory || 'consistent';
+      var trajArrow = traj === 'improving' ? '^' : traj === 'declining' ? 'v' : '~';
+      var trajLabel = traj.charAt(0).toUpperCase() + traj.slice(1);
+      var trajBg    = traj === 'improving' ? '#DDF0E6' : traj === 'declining' ? '#FAEAEA' : '#FDF3D9';
+      var trajFg    = traj === 'improving' ? '#256642' : traj === 'declining' ? '#A8312A' : '#7A5C18';
+
+      /* ── PAGE 1: Score overview ── */
+      doc.setFillColor('#1E3B2C');
+      doc.rect(0, 0, W, 72, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.setTextColor('#F5F2EB');
+      doc.text('Dino Diagnostic', M, 34);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor('#A8C4B0');
+      doc.text('Adaptive Study Tool  ·  Diagnostic Report', M, 51);
+      y = 92;
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor('#1A1917');
+      doc.text(results.examName || 'Diagnostic Report', M, y);
+      y += 19;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor('#928D85');
+      doc.text(examDate + '   ·   ' + (results.totalAnswered || 0) + ' questions answered', M, y);
+      y += 26;
+
+      // Score box
+      doc.setFillColor(scoreBg);
+      doc.roundedRect(M, y, 118, 50, 5, 5, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(24); doc.setTextColor(scoreColor);
+      doc.text(pct + '%', M + 59, y + 29, { align: 'center' });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor('#928D85');
+      doc.text('Overall Score', M + 59, y + 42, { align: 'center' });
+
+      // Trajectory pill right of score box
+      doc.setFillColor(trajBg);
+      doc.roundedRect(M + 128, y + 8, 108, 26, 5, 5, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(trajFg);
+      doc.text(trajArrow + '  Performance ' + trajLabel, M + 182, y + 25, { align: 'center' });
+      y += 64;
+
+      if (analysis.summary) {
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor('#514E49');
+        var sl = doc.splitTextToSize(analysis.summary, CW);
+        doc.text(sl, M, y); y += sl.length * 14 + 6;
+      }
+      if (analysis.trajectoryInsight) {
+        doc.setFont('helvetica', 'italic'); doc.setFontSize(9.5); doc.setTextColor('#928D85');
+        var tl = doc.splitTextToSize(analysis.trajectoryInsight, CW);
+        doc.text(tl, M, y); y += tl.length * 13 + 8;
+      }
+
+      // Strengths on page 1
+      if (analysis.strengths && analysis.strengths.length) {
+        np(44); hr();
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor('#1E3B2C');
+        doc.text('What You Know Well', M, y); y += 16;
+        analysis.strengths.forEach(function (s) {
+          np(16);
+          var topic   = (typeof s === 'string') ? s : (s.topic || '');
+          var insight = (typeof s === 'object' && s.insight) ? s.insight : null;
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor('#256642');
+          doc.text('✓  ' + topic, M + 4, y); y += 14;
+          if (insight) {
+            np(13);
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor('#928D85');
+            var il = doc.splitTextToSize(insight, CW - 16);
+            doc.text(il, M + 16, y); y += il.length * 12 + 3;
+          }
+        });
+        y += 6;
+      }
+
+      // Gaps on page 1 (overflow naturally)
+      if (analysis.gaps && analysis.gaps.length) {
+        np(52); hr();
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor('#1E3B2C');
+        doc.text('Knowledge Gaps & Study Instructions', M, y); y += 20;
+        analysis.gaps.forEach(function (g) {
+          np(72);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor('#1A1917');
+          var tw = doc.getTextWidth(g.topic || '');
+          doc.text(g.topic || '', M, y);
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor('#928D85');
+          doc.text((g.score || 0) + '%  ·  ' + (g.priority || '') + ' priority' +
+            (g.estimatedStudyTime ? '  ·  ' + g.estimatedStudyTime : ''), M + tw + 8, y);
+          y += 15;
+          if (g.source) {
+            np(12);
+            doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor('#928D85');
+            doc.text('Source: ' + g.source, M + 8, y); y += 12;
+          }
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor('#514E49');
+          var gl = doc.splitTextToSize(g.studyInstruction || '', CW - 14);
+          np(gl.length * 13 + 10);
+          doc.text(gl, M + 8, y); y += gl.length * 13;
+          if (g.focusPoints && g.focusPoints.length) {
+            np(13);
+            doc.setFontSize(8.5); doc.setTextColor('#928D85');
+            doc.text('Focus: ' + g.focusPoints.join(', '), M + 8, y); y += 13;
+          }
+          y += 10;
+        });
+      }
+
+      /* ── PAGE 2: Study Plan + Pre-exam Checklist (printable reference) ── */
+      doc.addPage();
+      doc.setFillColor('#C96F2E');
+      doc.rect(0, 0, W, 52, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor('#FFF8F3');
+      doc.text('Study Plan & Pre-Exam Checklist', M, 32);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor('#FCDAB8');
+      doc.text(results.examName || '', W - M, 32, { align: 'right' });
+      y = 70;
+
+      if (analysis.prioritizedStudyPlan && analysis.prioritizedStudyPlan.length) {
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor('#1E3B2C');
+        doc.text('Prioritized Study Plan', M, y); y += 18;
+        analysis.prioritizedStudyPlan.forEach(function (step) {
+          np(72);
+          // Numbered circle badge
+          doc.setFillColor('#C96F2E');
+          doc.circle(M + 10, y - 3, 9, 'F');
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor('#FFFFFF');
+          doc.text(String(step.order || ''), M + 10, y + 1, { align: 'center' });
+          // Topic
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor('#1A1917');
+          doc.text(step.topic || '', M + 24, y);
+          // Time estimate flush right
+          if (step.estimatedTime) {
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor('#C96F2E');
+            doc.text(step.estimatedTime, W - M, y, { align: 'right' });
+          }
+          y += 14;
+          if (step.reason) {
+            np(13);
+            doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor('#928D85');
+            var rl = doc.splitTextToSize(step.reason, CW - 24);
+            doc.text(rl, M + 24, y); y += rl.length * 12;
+          }
+          if (step.action) {
+            np(14);
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor('#514E49');
+            var al = doc.splitTextToSize(step.action, CW - 24);
+            doc.text(al, M + 24, y); y += al.length * 13 + 10;
+          }
+        });
+        y += 8;
+      }
+
+      if (analysis.preExamChecklist && analysis.preExamChecklist.length) {
+        np(50); hr('#E9D07A');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor('#7A5C18');
+        doc.text('Night-Before Checklist', M, y); y += 18;
+        analysis.preExamChecklist.forEach(function (item) {
+          np(22);
+          doc.setDrawColor('#C5BFB4'); doc.setLineWidth(1);
+          doc.rect(M, y - 10, 11, 11);
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor('#514E49');
+          var cl = doc.splitTextToSize(item, CW - 22);
+          doc.text(cl, M + 17, y); y += cl.length * 14 + 5;
+        });
+      }
+
+      if (analysis.nextSessionFocus) {
+        y += 10; np(60);
+        doc.setFillColor('#E8F0EB');
+        doc.roundedRect(M, y, CW, 1, 1, 1, 'F');
+        y += 14;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor('#1E3B2C');
+        doc.text('NEXT DIAGNOSTIC SESSION', M, y); y += 13;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor('#514E49');
+        var nl = doc.splitTextToSize(analysis.nextSessionFocus, CW);
+        doc.text(nl, M, y); y += nl.length * 13;
+      }
+
+      /* ── PAGE(S): Gap Practice Test ── */
+      if (questions && questions.length) {
+        doc.addPage();
+        doc.setFillColor('#1E3B2C');
+        doc.rect(0, 0, W, 52, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor('#F5F2EB');
+        doc.text('Gap Practice Test', M, 32);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor('#A8C4B0');
+        doc.text('Self-assessment sheet. Answer key not included.', M, 45);
+        y = 66;
+
+        questions.forEach(function (q, i) {
+          np(72);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor('#C96F2E');
+          doc.text((TYPE_LABELS_7[q.type] || q.type).toUpperCase() + '  ·  ' + (q.topic || ''), M, y);
+          y += 13;
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor('#1A1917');
+          var ql = doc.splitTextToSize((i + 1) + '.  ' + q.question, CW);
+          np(ql.length * 14 + 16); doc.text(ql, M, y); y += ql.length * 14;
+          if (q.type === 'multiple_choice' && q.options) {
+            ['A', 'B', 'C', 'D'].forEach(function (k, oi) {
+              if (!q.options[oi]) return;
+              np(14); doc.setFontSize(9.5); doc.setTextColor('#514E49');
+              var ol = doc.splitTextToSize(k + '.  ' + q.options[oi], CW - 20);
+              doc.text(ol, M + 14, y); y += ol.length * 13;
+            });
+          } else if (q.type === 'true_false') {
+            np(13); doc.setFontSize(9.5); doc.setTextColor('#514E49');
+            doc.text('A.  True          B.  False', M + 14, y); y += 13;
+          } else {
+            np(22); doc.setDrawColor('#DDD8CE'); doc.setLineWidth(0.5);
+            doc.line(M, y + 10, W - M, y + 10); y += 24;
+          }
+          y += 16;
+        });
+      }
+
+      var filename = ((results.examName || 'Dino-Diagnostic')
+        .replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')) + '-Report.pdf';
+      doc.save(filename);
+    }
+
+    /* ── DOM helpers ────────────────────────────────────────────────────── */
+    function mk7(tag, cls, id) {
+      var el = document.createElement(tag || 'div');
+      if (cls) el.className = cls;
+      if (id)  el.id = id;
+      return el;
+    }
+
+    function esc7(s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  })();
+</script>
+</body>
+</html>
